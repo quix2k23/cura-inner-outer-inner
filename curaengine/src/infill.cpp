@@ -16,6 +16,7 @@
 #include "geometry/OpenPolyline.h"
 #include "geometry/Point2D.h"
 #include "geometry/PointMatrix.h"
+#include "infill/BoneInfill.h"
 #include "infill/GyroidInfill.h"
 #include "infill/ImageBasedDensityProvider.h"
 #include "infill/LightningGenerator.h"
@@ -314,6 +315,9 @@ void Infill::_generate(
     case EFillMethod::GYROID:
         generateGyroidInfill(result_lines, result_polygons);
         break;
+    case EFillMethod::BONE:
+        generateBoneInfill(result_lines, result_polygons, settings);
+        break;
     case EFillMethod::LIGHTNING:
         assert(lightning_trees); // "Cannot generate Lightning infill without a generator!\n"
         generateLightningInfill(lightning_trees, result_lines);
@@ -356,7 +360,7 @@ void Infill::_generate(
 
     if (! skip_line_stitching_
         && (zig_zaggify_ || pattern_ == EFillMethod::CROSS || pattern_ == EFillMethod::CROSS_3D || pattern_ == EFillMethod::CUBICSUBDIV || pattern_ == EFillMethod::GYROID
-            || pattern_ == EFillMethod::HONEYCOMB || pattern_ == EFillMethod::OCTAGON || pattern_ == EFillMethod::ZIG_ZAG))
+            || pattern_ == EFillMethod::HONEYCOMB || pattern_ == EFillMethod::OCTAGON || pattern_ == EFillMethod::ZIG_ZAG || pattern_ == EFillMethod::BONE))
     { // don't stitch for non-zig-zagged line infill types
         OpenLinesSet stitched_lines;
         OpenPolylineStitcher::stitch(result_lines, stitched_lines, result_polygons, infill_line_width_);
@@ -430,6 +434,39 @@ void Infill::multiplyInfill(Shape& result_polygons, OpenLinesSet& result_lines)
 void Infill::generateGyroidInfill(OpenLinesSet& result_polylines, Shape& result_polygons)
 {
     GyroidInfill().generateInfill(result_polylines, result_polygons, zig_zaggify_, line_distance_, inner_contour_, z_, infill_line_width_, fill_angle_);
+}
+
+void Infill::generateBoneInfill(OpenLinesSet& result_polylines, Shape& result_polygons, const Settings& settings)
+{
+    BoneParameters parameters;
+    const auto percent = [&settings](const char* key, const double fallback) -> double
+    {
+        return settings.hasRecursive(key) ? settings.get<double>(key) / 100.0 : fallback;
+    };
+    if (settings.hasRecursive("bone_seed"))
+    {
+        parameters.seed = settings.get<int>("bone_seed");
+    }
+    parameters.irregularity = percent("bone_irregularity", parameters.irregularity);
+    parameters.alignment = percent("bone_alignment", parameters.alignment);
+    parameters.connectivity = percent("bone_connectivity", parameters.connectivity);
+    if (settings.hasRecursive("bone_alignment_tilt"))
+    {
+        parameters.tilt = settings.get<double>("bone_alignment_tilt");
+    }
+    if (settings.hasRecursive("bone_alignment_azimuth"))
+    {
+        parameters.azimuth = settings.get<double>("bone_alignment_azimuth");
+    }
+    if (settings.hasRecursive("bone_cortical_width"))
+    {
+        parameters.cortical_width = settings.get<coord_t>("bone_cortical_width");
+    }
+    if (settings.hasRecursive("bone_cortical_lines"))
+    {
+        parameters.cortical_lines = settings.get<int>("bone_cortical_lines");
+    }
+    BoneInfill(parameters).generateInfill(result_polylines, result_polygons, line_distance_, inner_contour_, z_, infill_line_width_, fill_angle_);
 }
 
 void Infill::generateHoneycombInfill(OpenLinesSet& result_polylines, Shape& result_polygons)
