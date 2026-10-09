@@ -1,0 +1,3 @@
+#!/bin/sh
+# Runs the quick checks before every push. Enable with:  git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/preflight.sh"

@@ -81,8 +81,9 @@ cp -a "$HERE/plugin/InnerOuterInnerWalls" "$DATA/plugins/InnerOuterInnerWalls"
 # Point Cura at the patched engine ([backend] location in cura.cfg).
 [ -f "$CFG.bak-inner-outer-inner" ] || cp -a "$CFG" "$CFG.bak-inner-outer-inner"
 awk -v loc="$ENGINE" '
-    /^\[/ { if (inb && !done) { print "location = " loc; done = 1 } inb = ($0 == "[backend]"); if (inb) seen = 1 }
-    inb && /^location[ \t]*=/ { if (!done) { print "location = " loc; done = 1 } ; next }
+    { line = $0; sub(/\r$/, "", line) }  # Match without a Windows line ending, but write the line back unchanged.
+    line ~ /^\[/ { if (inb && !done) { print "location = " loc; done = 1 } inb = (line == "[backend]"); if (inb) seen = 1 }
+    inb && line ~ /^location[ \t]*=/ { if (!done) { print "location = " loc; done = 1 } ; next }
     { print }
     END { if (inb && !done) print "location = " loc; if (!seen) { print ""; print "[backend]"; print "location = " loc } }
 ' "$CFG" > "$CFG.new" && mv "$CFG.new" "$CFG"
