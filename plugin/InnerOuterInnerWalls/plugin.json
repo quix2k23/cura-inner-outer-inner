@@ -1,8 +1,8 @@
 {
-    "name": "Inner/Outer/Inner Wall Ordering",
+    "name": "Inner/Outer/Inner Walls, Bone Infill and Arc Fitting",
     "author": "quix2k23",
-    "version": "1.0.0",
-    "description": "Adds 'Inner/Outer/Inner' to the Wall Ordering setting. Needs the patched CuraEngine (backend/location).",
+    "version": "1.1.0",
+    "description": "Adds 'Inner/Outer/Inner' to Wall Ordering, a bone-like 'Bone' infill pattern and arc fitting (G2/G3). Needs the patched CuraEngine (see backend/location).",
     "api": 8,
     "supported_sdk_versions": ["8.0.0"]
 }

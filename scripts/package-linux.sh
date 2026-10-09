@@ -43,6 +43,9 @@ exec "$DIR/CuraEngine.bin" "$@"
 WRAP
 chmod +x "$OUT/engine/CuraEngine" "$OUT/engine/CuraEngine.bin"
 
+# Tells the Cura plugin which features this engine has, so that it only offers settings the engine understands.
+printf '# Features of this CuraEngine build, read by the Cura plugin.\ninner_outer_inner\narc_fitting\nbone_infill\n' > "$OUT/engine/FEATURES"
+
 cp -r "$ROOT/plugin/InnerOuterInnerWalls" "$OUT/plugin/"
 cp "$ROOT/scripts/linux/install.sh" "$ROOT/scripts/linux/uninstall.sh" "$ROOT/README.md" "$ROOT/LICENSE" "$OUT/"
 chmod +x "$OUT/install.sh" "$OUT/uninstall.sh"
