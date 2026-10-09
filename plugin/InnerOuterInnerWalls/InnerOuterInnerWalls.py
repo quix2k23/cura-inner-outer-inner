@@ -1,8 +1,10 @@
 import json
 import os
+import sys
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Set
 
+from UM.Application import Application
 from UM.Extension import Extension
 from UM.Logger import Logger
 from UM.Settings.ContainerRegistry import ContainerRegistry
@@ -12,9 +14,19 @@ from cura.CuraApplication import CuraApplication
 
 FEATURES_FILE = "FEATURES"  # Written next to the patched engine; lists what that engine can do.
 
+# The version shown on the splash screen and in the About dialog is "<Cura version> (ioi <version of this add-on>)", for
+# example "5.13.0 (ioi 1.1.0)". It marks a modified build without changing which release it is based on, so it can never
+# be mistaken for an official 5.13.1 or 5.13.2. In places that need a machine-readable version (release names, file names)
+# the same thing is written as 5.13.0+ioi.1.1.0, where everything after the "+" is build metadata (SemVer / PEP 440).
+VERSION_LABEL = "ioi"
+# Only these places show the modified version. Everything else (backups, update checks, plugin compatibility, crash
+# reports, network requests) keeps seeing the real Cura version.
+DISPLAY_CALLERS = {("drawContents", "CuraSplashScreen.py"), ("version", "QtApplication.py")}
+
 # New values for existing enum settings: (setting key, value id, label, engine feature that is needed or None).
 NEW_OPTIONS = [
     ("inset_direction", "inner_outer_inner", "Inner/Outer/Inner", None),  # An engine without it prints inside out, which is harmless.
+    ("initial_layer_inset_direction", "inner_outer_inner", "Inner/Outer/Inner", None),  # The same for the first layer.
     ("infill_pattern", "bone", "Bone", "bone_infill"),  # An engine without it would print no infill at all.
 ]
 
@@ -44,9 +56,49 @@ class InnerOuterInnerWalls(Extension):
             Logger.logException("e", "Inner/Outer/Inner plugin: could not read the setting definitions")
 
         self._patch_definition_parsing()
+        self._patch_displayed_version()
         ContainerRegistry.getInstance().containerLoadComplete.connect(self._on_container_load_complete)
         self._application.globalContainerStackChanged.connect(self._patch_active_machine)
         self._application.initializationFinished.connect(self._on_initialization_finished)
+
+    # --- Version shown to the user ---------------------------------------------------------------------------------------
+
+    @staticmethod
+    def _own_version() -> Optional[str]:
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "plugin.json"), encoding = "utf-8") as f:
+                return str(json.load(f)["version"])
+        except Exception:
+            return None
+
+    def _patch_displayed_version(self) -> None:
+        """Show "<Cura version> (ioi <add-on version>)" on the splash screen and in the About dialog, and nowhere else."""
+        own_version = self._own_version()
+        if own_version is None or getattr(Application, "_ioi_version_patched", False):
+            return
+        original = Application.getVersion
+        suffix = " (%s %s)" % (VERSION_LABEL, own_version)
+        shown = set()  # type: Set[Any]
+
+        def get_version(application):
+            version = original(application)
+            if version.endswith(suffix):
+                return version  # Already labelled.
+            try:
+                caller = sys._getframe(1).f_code
+            except ValueError:
+                return version
+            key = (caller.co_name, os.path.basename(caller.co_filename))
+            if key in DISPLAY_CALLERS:
+                if key not in shown:
+                    shown.add(key)
+                    Logger.log("i", "Inner/Outer/Inner plugin: %s shows the version %s", key[1], version + suffix)
+                return version + suffix
+            return version
+
+        Application.getVersion = get_version
+        Application._ioi_version_patched = True
+        Logger.log("i", "Inner/Outer/Inner plugin: splash screen and About dialog now show the version as %s", original(Application.getInstance()) + suffix)
 
     # --- Which features the engine has -------------------------------------------------------------------------
 
@@ -150,10 +202,11 @@ class InnerOuterInnerWalls(Extension):
             container = stack.definition
             infill = container.findDefinitions(key = "infill_pattern")
             present = [key for key in VISIBLE_KEYS if container.findDefinitions(key = key)]
-            Logger.log("i", "Inner/Outer/Inner plugin: printer '%s': added just now %s; infill patterns %s; wall orders %s; new settings present %s",
+            Logger.log("i", "Inner/Outer/Inner plugin: printer '%s': added just now %s; infill patterns %s; wall orders %s; initial layer wall orders %s; new settings present %s",
                        stack.getName(), added,
                        list(infill[0].options.keys())[-3:] if infill else None,
                        list(container.findDefinitions(key = "inset_direction")[0].options.keys()),
+                       list(container.findDefinitions(key = "initial_layer_inset_direction")[0].options.keys()),
                        present)
         except Exception as e:
             Logger.log("e", "Inner/Outer/Inner plugin: could not check the active printer: %s", e)
