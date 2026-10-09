@@ -876,6 +876,11 @@ bool Settings::has(const std::string& key) const
     return settings.find(key) != settings.end();
 }
 
+bool Settings::hasRecursive(const std::string& key) const
+{
+    return has(key) || (parent != nullptr && parent->hasRecursive(key));
+}
+
 void Settings::setParent(Settings* new_parent)
 {
     parent = new_parent;

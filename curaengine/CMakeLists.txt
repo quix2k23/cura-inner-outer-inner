@@ -153,6 +153,7 @@ set(engine_SRCS # Except main.cpp.
         src/utils/Segment3LL.cpp
         src/utils/Date.cpp
         src/utils/ExtrusionJunction.cpp
+        src/utils/ArcFitter.cpp
         src/utils/ExtrusionLine.cpp
         src/utils/ExtrusionSegment.cpp
         src/utils/gettime.cpp

@@ -95,6 +95,11 @@ public:
      */
     bool has(const std::string& key) const;
 
+    /*!
+     * Check whether a setting is known in these settings or in any of their parents, which is what get() looks at.
+     */
+    bool hasRecursive(const std::string& key) const;
+
     /*
      * Change the parent settings object.
      *
