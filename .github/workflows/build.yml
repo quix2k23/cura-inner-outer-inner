@@ -165,7 +165,9 @@ jobs:
           & "$pkg\install.ps1" -DataDir $data -InstallDir $install   # idempotent
           if ((Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location =').Count -ne 1) { throw 'location line duplicated' }
           & "$pkg\uninstall.ps1" -DataDir $data -InstallDir $install
-          if ((Get-Content (Join-Path $data 'cura.cfg') -Raw).Trim() -ne $before.Trim()) { throw 'cura.cfg not restored' }
+          # Compare the content, not the line endings (the script writes Windows line endings).
+          $norm = { param($t) ($t -replace "`r`n", "`n").Trim() }
+          if ((& $norm (Get-Content (Join-Path $data 'cura.cfg') -Raw)) -ne (& $norm $before)) { throw 'cura.cfg not restored' }
           if (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls')) { throw 'plugin not removed' }
 
       - name: Create archive
