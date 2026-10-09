@@ -1,0 +1,133 @@
+{
+    "bone_seed": {
+        "label": "Bone Structure Seed",
+        "description": "Selects one of the many possible bone-like structures. Different numbers give different, equally dense patterns; the same number always gives the same one.",
+        "type": "int",
+        "default_value": 1,
+        "minimum_value": "0",
+        "maximum_value": "99999",
+        "enabled": "infill_pattern == 'bone'",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false
+    },
+    "bone_alignment": {
+        "label": "Bone Alignment",
+        "description": "How strongly the struts line up with one main direction, like the trabeculae in real bone follow the load. 0% gives a structure that is the same in every direction. High values give struts that run mostly along the main direction, with fewer cross-links. Struts along the vertical direction print very reliably.",
+        "type": "float",
+        "unit": "%",
+        "default_value": 60,
+        "minimum_value": "0",
+        "maximum_value": "97",
+        "enabled": "infill_pattern == 'bone'",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false
+    },
+    "bone_alignment_tilt": {
+        "label": "Bone Alignment Tilt",
+        "description": "Tilts the main direction of the struts away from vertical. 0 is straight up; 90 lies flat in the layer. Use it to follow a load that does not run straight up through the part.",
+        "type": "float",
+        "unit": "°",
+        "default_value": 0,
+        "minimum_value": "0",
+        "maximum_value": "90",
+        "enabled": "infill_pattern == 'bone' and bone_alignment > 0",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false
+    },
+    "bone_alignment_azimuth": {
+        "label": "Bone Alignment Direction",
+        "description": "The direction in the layer plane that the main direction is tilted towards, counter-clockwise from the X axis. Has no effect when the tilt is 0.",
+        "type": "float",
+        "unit": "°",
+        "default_value": 0,
+        "minimum_value": "0",
+        "maximum_value": "360",
+        "enabled": "infill_pattern == 'bone' and bone_alignment > 0 and bone_alignment_tilt > 0",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false
+    },
+    "bone_irregularity": {
+        "label": "Bone Irregularity",
+        "description": "How much the thickness and spacing of the struts vary. Low values give a regular, almost repeating structure; high values give a more organic, uneven one like real bone.",
+        "type": "float",
+        "unit": "%",
+        "default_value": 40,
+        "minimum_value": "0",
+        "maximum_value": "100",
+        "enabled": "infill_pattern == 'bone'",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false
+    },
+    "bone_connectivity": {
+        "label": "Bone Connectivity",
+        "description": "100% gives one fully connected network of plates, the strongest and most reliable option. Lower values break it up into separate cells and rods with gaps between them, which is lighter and more porous but weaker.",
+        "type": "float",
+        "unit": "%",
+        "default_value": 100,
+        "minimum_value": "0",
+        "maximum_value": "100",
+        "enabled": "infill_pattern == 'bone'",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false
+    },
+    "bone_cortical_width": {
+        "label": "Bone Dense Zone Width",
+        "description": "Width of the zone along the walls where the structure is made denser, like the transition from spongy bone to the hard outer shell. Set to 0 to turn it off.",
+        "type": "float",
+        "unit": "mm",
+        "default_value": 3,
+        "minimum_value": "0",
+        "maximum_value": "20",
+        "enabled": "infill_pattern == 'bone'",
+        "settable_per_mesh": false,
+        "settable_per_extruder": false,
+        "children": {
+            "bone_cortical_lines": {
+                "label": "Bone Dense Zone Struts",
+                "description": "How many extra struts are added on each side of every strut in the dense zone along the walls. 1 roughly triples the density there.",
+                "type": "int",
+                "default_value": 1,
+                "minimum_value": "0",
+                "maximum_value": "3",
+                "enabled": "infill_pattern == 'bone' and bone_cortical_width > 0",
+                "settable_per_mesh": false,
+                "settable_per_extruder": false
+            }
+        }
+    },
+    "arc_fitting_enable": {
+        "label": "Arc Fitting",
+        "description": "Writes curves as circular arcs (G2/G3 commands) instead of many short straight moves. This makes the G-code much smaller and the movement smoother, which can improve surface quality and reduce stutter on slow controllers. <b>Your printer firmware must support arcs</b>: Marlin needs ARC_SUPPORT and Klipper needs a [gcode_arcs] section in printer.cfg.",
+        "type": "bool",
+        "default_value": false,
+        "settable_per_mesh": false,
+        "settable_per_extruder": false,
+        "children": {
+            "arc_fitting_tolerance": {
+                "label": "Arc Fitting Tolerance",
+                "description": "The largest distance an arc is allowed to deviate from the original path. Larger values replace more segments with arcs but follow the shape less exactly.",
+                "type": "float",
+                "unit": "mm",
+                "default_value": 0.05,
+                "minimum_value": "0.005",
+                "maximum_value_warning": "0.2",
+                "maximum_value": "1",
+                "enabled": "arc_fitting_enable",
+                "settable_per_mesh": false,
+                "settable_per_extruder": false
+            },
+            "arc_fitting_max_radius": {
+                "label": "Arc Fitting Maximum Radius",
+                "description": "Arcs with a larger radius are written as straight lines. Very large, almost straight arcs are not worth the risk of rounding errors in the firmware.",
+                "type": "float",
+                "unit": "mm",
+                "default_value": 1000,
+                "minimum_value": "1",
+                "maximum_value": "100000",
+                "enabled": "arc_fitting_enable",
+                "settable_per_mesh": false,
+                "settable_per_extruder": false
+            }
+        }
+    }
+}

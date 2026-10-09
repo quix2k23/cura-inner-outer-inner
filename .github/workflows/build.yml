@@ -76,6 +76,12 @@ jobs:
       - name: Wall order test (packaged engine)
         run: python3 tests/test_wall_order.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
 
+      - name: Arc fitting test (packaged engine)
+        run: python3 tests/test_arcs.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
+
+      - name: Bone infill test (packaged engine)
+        run: python3 tests/test_bone_infill.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
+
       - name: Installer test (fake Cura settings folder)
         run: |
           set -eu
@@ -87,6 +93,8 @@ jobs:
           "$PKG/install.sh" --native --data-dir "$DATA"
           grep -q "^location = .*cura-inner-outer-inner/CuraEngine" "$DATA/cura.cfg"
           test -f "$DATA/plugins/InnerOuterInnerWalls/plugin.json"
+          test -f "$DATA/plugins/InnerOuterInnerWalls/settings.def.json"
+          test -f "$(dirname "$(dirname "$DATA")")/cura-inner-outer-inner/FEATURES"
           "$PKG/uninstall.sh" --native --data-dir "$DATA"
           diff "$RUNNER_TEMP/original.cfg" "$DATA/cura.cfg"
           test ! -e "$DATA/plugins/InnerOuterInnerWalls"
@@ -150,6 +158,14 @@ jobs:
         shell: pwsh
         run: python tests/test_wall_order.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
 
+      - name: Arc fitting test (packaged engine)
+        shell: pwsh
+        run: python tests/test_arcs.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
+
+      - name: Bone infill test (packaged engine)
+        shell: pwsh
+        run: python tests/test_bone_infill.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
+
       - name: Installer test (fake Cura settings folder)
         shell: pwsh
         run: |
@@ -162,6 +178,7 @@ jobs:
           & "$pkg\install.ps1" -DataDir $data -InstallDir $install
           if (-not (Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location = .*CuraEngine\.exe$')) { throw 'location line missing' }
           if (-not (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\plugin.json'))) { throw 'plugin missing' }
+          if (-not (Test-Path (Join-Path $install 'FEATURES'))) { throw 'FEATURES file missing next to the engine' }
           & "$pkg\install.ps1" -DataDir $data -InstallDir $install   # idempotent
           if ((Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location =').Count -ne 1) { throw 'location line duplicated' }
           & "$pkg\uninstall.ps1" -DataDir $data -InstallDir $install

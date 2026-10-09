@@ -9,6 +9,8 @@ New-Item -ItemType Directory -Force -Path (Join-Path $Out 'engine'), (Join-Path 
 Copy-Item $Exe (Join-Path $Out 'engine\CuraEngine.exe')
 # DLLs Conan put next to the executable (Arcus, TBB, ...).
 Copy-Item (Join-Path $binDir '*.dll') (Join-Path $Out 'engine') -ErrorAction SilentlyContinue
+# Tells the Cura plugin which features this engine has, so that it only offers settings the engine understands.
+Set-Content -Path (Join-Path $Out 'engine\FEATURES') -Value "# Features of this CuraEngine build, read by the Cura plugin.`ninner_outer_inner`narc_fitting`nbone_infill" -Encoding ascii
 # The engine is installed outside Cura's own folder, so ship the Visual C++ runtime next to it (app-local deployment).
 foreach ($name in 'vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll', 'concrt140.dll') {
     $source = Join-Path $env:windir "System32\$name"
