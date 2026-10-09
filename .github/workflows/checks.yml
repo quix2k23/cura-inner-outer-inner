@@ -1,0 +1,52 @@
+name: checks
+
+# Fast checks (about a minute) on every push and pull request, so that mistakes in the scripts, tests and workflows show up
+# straight away instead of an hour into a release build.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: pip install pyyaml
+      - name: Preflight checks (syntax, JSON, YAML, personal data, installer scripts)
+        run: scripts/preflight.sh
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: PowerShell scripts parse
+        shell: powershell
+        run: |
+          $bad = $false
+          foreach ($file in @(Get-ChildItem scripts -Filter *.ps1 -Recurse) + @(Get-ChildItem tests -Filter *.ps1)) {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$errors)
+            if ($errors) { Write-Host "$($file.Name): $errors"; $bad = $true }
+          }
+          if ($bad) { exit 1 }
+
+      # Windows PowerShell 5.1 is what install.bat uses, and it can compile the small stand-in engine.
+      - name: Installer test against a stub engine
+        shell: powershell
+        run: |
+          $pkg = Join-Path $env:RUNNER_TEMP 'stub'
+          New-Item -ItemType Directory -Force -Path "$pkg\engine", "$pkg\plugin" | Out-Null
+          Add-Type -TypeDefinition 'public class Stub { public static void Main() { System.Console.WriteLine("Cura_SteamEngine version 5.13.0"); } }' -OutputType ConsoleApplication -OutputAssembly "$pkg\engine\CuraEngine.exe"
+          Set-Content -Path "$pkg\engine\FEATURES" -Value "# stub`ninner_outer_inner`narc_fitting`nbone_infill" -Encoding ascii
+          Copy-Item -Recurse plugin\InnerOuterInnerWalls "$pkg\plugin\"
+          Copy-Item scripts\windows\* $pkg
+          .\tests\test_installer.ps1 -Package $pkg

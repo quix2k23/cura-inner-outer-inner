@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 350
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Same compiler family as UltiMaker's own Linux builds (GCC 13 on Ubuntu 22.04), so the binary runs on the same systems.
       - name: Install toolchain
@@ -37,7 +37,7 @@ jobs:
           sudo apt-get install -y gcc-13 g++-13 ninja-build patchelf
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Restore Conan cache
         id: cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ~/.conan2/p
           key: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
@@ -62,7 +62,7 @@ jobs:
       # Saved even when the build fails, so a retry does not start from zero.
       - name: Save Conan cache
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ~/.conan2/p
           key: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
@@ -83,27 +83,13 @@ jobs:
         run: python3 tests/test_bone_infill.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
 
       - name: Installer test (fake Cura settings folder)
-        run: |
-          set -eu
-          PKG="$PWD/dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
-          DATA="$RUNNER_TEMP/fake/data/cura/5.13"
-          mkdir -p "$DATA"
-          printf '[general]\nversion = 6\n\n[backend]\n\n[mesh]\n' > "$DATA/cura.cfg"
-          cp "$DATA/cura.cfg" "$RUNNER_TEMP/original.cfg"
-          "$PKG/install.sh" --native --data-dir "$DATA"
-          grep -q "^location = .*cura-inner-outer-inner/CuraEngine" "$DATA/cura.cfg"
-          test -f "$DATA/plugins/InnerOuterInnerWalls/plugin.json"
-          test -f "$DATA/plugins/InnerOuterInnerWalls/settings.def.json"
-          test -f "$(dirname "$(dirname "$DATA")")/cura-inner-outer-inner/FEATURES"
-          "$PKG/uninstall.sh" --native --data-dir "$DATA"
-          diff "$RUNNER_TEMP/original.cfg" "$DATA/cura.cfg"
-          test ! -e "$DATA/plugins/InnerOuterInnerWalls"
+        run: tests/test_installer.sh "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
 
       - name: Create archive
         run: |
           cd dist
           tar -czf "cura-inner-outer-inner-$CURA_VERSION-linux-x86_64.tar.gz" "cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: dist/*.tar.gz
@@ -115,9 +101,9 @@ jobs:
     env:
       CONAN_HOME: C:\cn
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -129,7 +115,7 @@ jobs:
           conan profile detect --force
 
       - name: Restore Conan cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: C:\cn\p
           key: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
@@ -142,7 +128,7 @@ jobs:
 
       - name: Save Conan cache
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: C:\cn\p
           key: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
@@ -167,45 +153,31 @@ jobs:
         run: python tests/test_bone_infill.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
 
       - name: Installer test (fake Cura settings folder)
-        shell: pwsh
-        run: |
-          $pkg = Resolve-Path "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64"
-          $data = Join-Path $env:RUNNER_TEMP 'fake\cura\5.13'
-          $install = Join-Path $env:RUNNER_TEMP 'fake\engine'
-          New-Item -ItemType Directory -Force -Path $data | Out-Null
-          Set-Content -Path (Join-Path $data 'cura.cfg') -Value "[general]`nversion = 6`n`n[backend]`n`n[mesh]`n" -Encoding ascii
-          $before = Get-Content (Join-Path $data 'cura.cfg') -Raw
-          & "$pkg\install.ps1" -DataDir $data -InstallDir $install
-          if (-not (Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location = .*CuraEngine\.exe$')) { throw 'location line missing' }
-          if (-not (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\plugin.json'))) { throw 'plugin missing' }
-          if (-not (Test-Path (Join-Path $install 'FEATURES'))) { throw 'FEATURES file missing next to the engine' }
-          & "$pkg\install.ps1" -DataDir $data -InstallDir $install   # idempotent
-          if ((Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location =').Count -ne 1) { throw 'location line duplicated' }
-          & "$pkg\uninstall.ps1" -DataDir $data -InstallDir $install
-          # Compare the content, not the line endings (the script writes Windows line endings).
-          $norm = { param($t) ($t -replace "`r`n", "`n").Trim() }
-          if ((& $norm (Get-Content (Join-Path $data 'cura.cfg') -Raw)) -ne (& $norm $before)) { throw 'cura.cfg not restored' }
-          if (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls')) { throw 'plugin not removed' }
+        shell: powershell
+        run: .\tests\test_installer.ps1 -Package "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64"
 
       - name: Create archive
         shell: pwsh
         run: Compress-Archive -Path "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64" -DestinationPath "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: dist/*.zip
 
   release:
     needs: [linux, windows]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.platform == 'all')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: assets
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
+      - name: List the assets
+        run: ls -la assets
+      - uses: softprops/action-gh-release@v3
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           body_path: RELEASE_NOTES.md
           files: assets/*

@@ -36,8 +36,9 @@ DEST="$(dirname "$(dirname "$DATA")")/cura-inner-outer-inner"
 if [ -f "$CFG" ]; then
     # Drop only our location line from [backend]; leave everything else as it is.
     awk -v dest="$DEST/" '
-        /^\[/ { inb = ($0 == "[backend]") }
-        inb && /^location[ \t]*=/ && index($0, dest) { next }
+        { line = $0; sub(/\r$/, "", line) }  # Match without a Windows line ending, but write the line back unchanged.
+        line ~ /^\[/ { inb = (line == "[backend]") }
+        inb && line ~ /^location[ \t]*=/ && index(line, dest) { next }
         { print }
     ' "$CFG" > "$CFG.new" && mv "$CFG.new" "$CFG"
     echo "Cura now uses its own engine again."
