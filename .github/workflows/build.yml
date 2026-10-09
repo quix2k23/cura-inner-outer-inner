@@ -4,6 +4,12 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Which platform to build
+        type: choice
+        options: [all, linux, windows]
+        default: all
 
 permissions:
   contents: write
@@ -17,6 +23,7 @@ env:
 
 jobs:
   linux:
+    if: github.event_name != 'workflow_dispatch' || inputs.platform != 'windows'
     runs-on: ubuntu-22.04
     timeout-minutes: 350
     steps:
@@ -94,6 +101,7 @@ jobs:
           path: dist/*.tar.gz
 
   windows:
+    if: github.event_name != 'workflow_dispatch' || inputs.platform != 'linux'
     runs-on: windows-2022
     timeout-minutes: 350
     env:
