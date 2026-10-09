@@ -67,7 +67,7 @@ With **Inner/Outer/Inner** selected in *Wall Ordering*, each layer's walls are p
 The outer wall is laid down against walls that are already in place, and wall 1 is then printed against it. The idea is a more consistent outer surface and better dimensional control than printing the outer wall first or last. How much that helps depends on your printer, filament and speeds, so try it on a test part. I have not done a systematic print-quality comparison.
 
 - With **two walls or fewer** there is nothing to sandwich with, so it prints the outer wall first, then the inner one (OrcaSlicer does the same).
-- The first layer follows Cura's separate **Initial Layer Wall Ordering** setting, which is unchanged.
+- The first layer has its own **Initial Layer Wall Ordering** setting, which offers *Inner/Outer/Inner* as well. By default it follows *Wall Ordering*, so choosing Inner/Outer/Inner for the walls applies it to the first layer too; set the initial layer one to something else if you want the first layer printed differently.
 - It only applies when the outer wall and the inner walls use the **same extruder**; otherwise it falls back to *Inside To Outside*.
 - **Group Outer Walls** has no effect in this mode.
 - It works with "Optimize Wall Printing Order" on and off.
@@ -105,13 +105,13 @@ Limits: this is meant to imitate the *structure* of bone. The strength of printe
 
 ## Arc fitting (G2/G3)
 
-Slicers normally describe curves as many tiny straight moves. With **Arc Fitting** on, runs of moves that lie on one circle are written as a single G2 (clockwise) or G3 (counter-clockwise) arc. The G-code gets about 3 to 4 times smaller on curved parts, and the printer follows the curve with one continuous motion, which can give smoother walls and avoid stutter on slow controllers.
+Slicers normally describe curves as many tiny straight moves. With **Arc Fitting** on, runs of moves that lie on one circle are written as a single G2 (clockwise) or G3 (counter-clockwise) arc. The G-code gets about 3 to 4 times smaller on curved parts, which means less to upload and parse, and the slicer's many-sided polygons are replaced by exact circles. Note that firmware such as Klipper and Marlin still splits an arc into very short straight moves internally, so the motion itself is not different in kind; do not expect a big change in surface quality.
 
 The idea and the acceptance rules are taken from the arc fitting in OrcaSlicer (itself derived from ArcWelder): keep adding points to a candidate arc while one circle still passes within the tolerance of every point and the points keep turning the same way, and take the longest arc that fits. On top of that, an arc is rejected if it would bulge away from the original path between two points, so corners are never rounded off.
 
 **Your printer firmware must understand arcs, or the print will fail:**
 
-- **Klipper:** add this to `printer.cfg` (without it Klipper rejects G2/G3 as unknown commands):
+- **Klipper:** add a `[gcode_arcs]` section to `printer.cfg` (without it Klipper rejects G2/G3 as unknown commands). The step-by-step guide, with a safe test and troubleshooting, is in [docs/klipper-arc-gcode.md](docs/klipper-arc-gcode.md). The short version:
   ```
   [gcode_arcs]
   resolution: 0.1
@@ -131,13 +131,17 @@ The extruded amount follows the arc's real length. Cura's live layer view after 
 
 Every build runs these checks on the packaged engine, on **both Linux and Windows**:
 
-- `tests/test_wall_order.py`: the printed wall order for 2, 3 and 4 walls, and that "Inside To Outside" is unchanged.
+- `tests/test_wall_order.py`: the printed wall order for 2, 3 and 4 walls, that "Inside To Outside" is unchanged, and that the first layer follows *Initial Layer Wall Ordering* while the other layers follow *Wall Ordering*.
 - `tests/test_arcs.py`: a round part is sliced with and without arcs. The arcs must stay within the tolerance of the original path (measured 0.036 mm for a 0.05 mm tolerance), extrude the same material (within 0.05 %), have matching start and end radius for the firmware, and make the G-code at least 40 % smaller (measured 3.3 times smaller).
 - `tests/test_bone_infill.py`: the infill length follows the line distance (the test allows 15 %; measured within 5 %), the same seed gives identical G-code and another seed a different one, 99 % of the infill is supported by infill below it, alignment makes the struts upright (99 % of the points line up with the layer below vs 62 % without alignment), the infill stays inside the walls, and the dense zone adds infill near the walls but not in the middle.
 - The install and uninstall scripts are run against a throwaway Cura settings folder, including running the installer twice and checking that uninstall restores `cura.cfg` exactly.
 - The arc fitting was also replayed with the exact settings Cura sent to the engine for a real Klipper printer profile: 3,511 arcs, deviation 0.040 mm, extruded amount within 0.07 %, file size halved.
 
 By hand, in Cura 5.13.0 (Flatpak on Linux): the new options and all the new settings appear for the printer, the sliced G-code has the expected wall order, and the bone infill and arcs were checked by rendering layers and vertical sections of the sliced G-code. The Windows package passes the automated tests above but has **not yet been tried inside a real Windows Cura install**. Printed parts made with the bone infill or with arcs have not been checked yet, so print quality and strength are unverified; please open an issue if you find problems.
+
+## Version label
+
+The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.1.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.1.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
 
 ## Updates
 
@@ -153,6 +157,10 @@ The full CuraEngine source is in [`curaengine/`](curaengine). The history is arr
 4. `CuraEngine: add a bone-like (trabecular) infill pattern`: new `BoneInfill` (`include/infill/BoneInfill.h`, `src/infill/BoneInfill.cpp`), and the plumbing for the `bone` pattern (`EFillMethod::BONE`, the settings parser, the infill dispatch, the line stitching list and bridging).
 
 The Cura side is the plugin in [`plugin/InnerOuterInnerWalls`](plugin/InnerOuterInnerWalls). It adds the new option values with Cura's own `extend_category` call, adds the setting definitions from [`settings.def.json`](plugin/InnerOuterInnerWalls/settings.def.json) to the printer definition, and makes them visible.
+
+## Development
+
+Quick checks (script syntax, JSON and YAML, no personal data in the published files, and the install and uninstall scripts against a stand-in engine) run in about a second with `scripts/preflight.sh`, and on GitHub for every push (`checks` workflow). To run them automatically before each push: `git config core.hooksPath .githooks`. Pass `CURA_ENGINE=/path/to/CuraEngine` to the script to run the engine tests on a binary too. The release build (`build` workflow) takes much longer, so it only runs for version tags and when started by hand.
 
 ## Build from source
 

@@ -97,7 +97,7 @@
     },
     "arc_fitting_enable": {
         "label": "Arc Fitting",
-        "description": "Writes curves as circular arcs (G2/G3 commands) instead of many short straight moves. This makes the G-code much smaller and the movement smoother, which can improve surface quality and reduce stutter on slow controllers. <b>Your printer firmware must support arcs</b>: Marlin needs ARC_SUPPORT and Klipper needs a [gcode_arcs] section in printer.cfg.",
+        "description": "Writes curves as circular arcs (G2/G3 commands) instead of many short straight moves. This makes the G-code about 3 to 4 times smaller on curved parts and replaces polygons by exact circles; the firmware still splits arcs into short moves itself. <b>Your printer firmware must support arcs</b>: Marlin needs ARC_SUPPORT and Klipper needs a [gcode_arcs] section in printer.cfg (see docs/klipper-arc-gcode.md in the project repository).",
         "type": "bool",
         "default_value": false,
         "settable_per_mesh": false,
