@@ -44,7 +44,7 @@ def write_ring_stl(path):
         f.write("endsolid ring\n")
 
 
-def slice_ring(engine, workdir, inset_direction, walls, gcode):
+def slice_ring(engine, workdir, inset_direction, walls, gcode, initial_direction=None):
     for name in ("fdmprinter.def.json", "fdmextruder.def.json"):
         target = os.path.join(workdir, name)
         if not os.path.exists(target):
@@ -54,6 +54,8 @@ def slice_ring(engine, workdir, inset_direction, walls, gcode):
     common = ["-s", "wall_line_count=%d" % walls, "-s", "inset_direction=%s" % inset_direction,
               "-s", "layer_height=0.2", "-s", "layer_height_0=0.2", "-s", "adhesion_type=none",
               "-s", "infill_sparse_density=10"]
+    if initial_direction:
+        common += ["-s", "initial_layer_inset_direction=%s" % initial_direction]
     cmd = [engine, "slice", "--force-read-parent", "-j", os.path.join(workdir, "fdmprinter.def.json"),
            "-s", "machine_width=200", "-s", "machine_depth=200", "-s", "machine_height=200",
            "-s", "machine_center_is_zero=false"] + common + \
@@ -118,10 +120,13 @@ def main():
     engine = os.path.abspath(sys.argv[1])
     ok = True
     with tempfile.TemporaryDirectory() as workdir:
-        def run(direction, walls):
-            gcode = os.path.join(workdir, "%s-%d.gcode" % (direction, walls))
-            slice_ring(engine, workdir, direction, walls, gcode)
-            return wall_order(gcode, LAYER)
+        def run(direction, walls, initial=None, layer=LAYER):
+            gcode = os.path.join(workdir, "%s-%d-%s.gcode" % (direction, walls, initial))
+            slice_ring(engine, workdir, direction, walls, gcode, initial)
+            return wall_order(gcode, layer)
+
+        def contour(order):
+            return [int(w.split("wall")[1]) for w in order if w.startswith("contour")]
 
         both = lambda order: [("%s wall%d" % (k, w)) for k in ("contour", "hole") for w in order]
 
@@ -139,6 +144,14 @@ def main():
         for kind in ("contour", "hole"):
             seq = [int(w.split("wall")[1]) for w in run("inside_out", 4) if w.startswith(kind)]
             ok &= expect("inside_out unchanged, 4 walls, %s" % kind, seq, [3, 2, 1, 0])
+
+        # The first layer has its own setting ("Initial Layer Wall Ordering"); all other layers use "Wall Ordering".
+        for wall_ordering, initial, first, later in (("inside_out", "inner_outer_inner", [3, 2, 0, 1], [3, 2, 1, 0]),
+                                                      ("inner_outer_inner", "inside_out", [3, 2, 1, 0], [3, 2, 0, 1]),
+                                                      ("inner_outer_inner", "inner_outer_inner", [3, 2, 0, 1], [3, 2, 0, 1])):
+            ok &= expect("first layer with Initial Layer Wall Ordering %s, Wall Ordering %s" % (initial, wall_ordering),
+                         contour(run(wall_ordering, 4, initial, layer=0)), first)
+            ok &= expect("  other layers with the same settings", contour(run(wall_ordering, 4, initial, layer=LAYER)), later)
     print("\nALL PASSED" if ok else "\nFAILED")
     sys.exit(0 if ok else 1)
 
