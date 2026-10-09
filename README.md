@@ -63,6 +63,13 @@ Start Cura, open **Print Settings**, search for **Wall Ordering** and choose **I
 
 Close Cura and run `uninstall.sh` (Linux) or `uninstall.bat` (Windows). It removes the plugin, deletes the engine and removes that one line from `cura.cfg`. If a saved profile still says Inner/Outer/Inner, set Wall Ordering back before you slice.
 
+## How it was tested
+
+- **Wall order:** `tests/test_wall_order.py` slices a ring-shaped part and checks the order of the printed walls (2, 3 and 4 walls, plus "Inside To Outside" unchanged). The build runs it on the packaged engine for **both Linux and Windows**, so every release has passed it on both.
+- **Installers:** the install and uninstall scripts are run on both systems against a throwaway Cura settings folder, including running the installer twice and checking that uninstall restores `cura.cfg` exactly.
+- **In Cura (Linux):** tried by the author in Cura 5.13.0 (Flatpak): the option shows in the Wall Ordering dropdown, and the sliced G-code has the walls in the expected order. The Linux engine from the build also starts inside the Cura Flatpak sandbox.
+- **In Cura (Windows):** the Windows engine and scripts pass the automated tests above, but the package has **not yet been tried inside a real Windows Cura install** by the author. If something goes wrong there, please open an issue.
+
 ## Updates
 
 The engine is built from CuraEngine **5.13.0** and is meant for Cura 5.13.x. When Cura updates to a new version, the engine from this project is no longer matched to it: uninstall, then check whether a new release is available here. (The change itself is small and carries over to new CuraEngine versions easily.)
