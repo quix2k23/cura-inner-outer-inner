@@ -1,0 +1,8 @@
+{
+    "name": "Inner/Outer/Inner Wall Ordering",
+    "author": "quix2k23",
+    "version": "1.0.0",
+    "description": "Adds 'Inner/Outer/Inner' to the Wall Ordering setting. Needs the patched CuraEngine (backend/location).",
+    "api": 8,
+    "supported_sdk_versions": ["8.0.0"]
+}

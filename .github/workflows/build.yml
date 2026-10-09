@@ -1,0 +1,184 @@
+name: build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CURA_VERSION: 5.13.0
+  CONAN_OPTIONS: >-
+    -s build_type=Release -s compiler.cppstd=20
+    -o "curaengine/*:enable_plugins=True" -o "curaengine/*:enable_arcus=True"
+    -c tools.build:skip_test=True
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same compiler family as UltiMaker's own Linux builds (GCC 13 on Ubuntu 22.04), so the binary runs on the same systems.
+      - name: Install toolchain
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13 ninja-build patchelf
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Conan and UltiMaker's Conan config
+        run: |
+          pip install "conan>=2.7,<3"
+          conan config install https://github.com/ultimaker/conan-config.git
+          conan profile detect --force
+
+      - name: Restore Conan cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.conan2/p
+          key: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
+          restore-keys: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-
+
+      - name: Build CuraEngine
+        working-directory: curaengine
+        run: conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS -of out
+
+      # Saved even when the build fails, so a retry does not start from zero.
+      - name: Save Conan cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.conan2/p
+          key: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
+
+      - name: Package
+        run: |
+          BIN=$(find curaengine/out -type f -name CuraEngine | head -1)
+          echo "Built: $BIN"
+          scripts/package-linux.sh "$BIN" "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
+
+      - name: Wall order test (packaged engine)
+        run: python3 tests/test_wall_order.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
+
+      - name: Installer test (fake Cura settings folder)
+        run: |
+          set -eu
+          PKG="$PWD/dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
+          DATA="$RUNNER_TEMP/fake/data/cura/5.13"
+          mkdir -p "$DATA"
+          printf '[general]\nversion = 6\n\n[backend]\n\n[mesh]\n' > "$DATA/cura.cfg"
+          cp "$DATA/cura.cfg" "$RUNNER_TEMP/original.cfg"
+          "$PKG/install.sh" --native --data-dir "$DATA"
+          grep -q "^location = .*cura-inner-outer-inner/CuraEngine" "$DATA/cura.cfg"
+          test -f "$DATA/plugins/InnerOuterInnerWalls/plugin.json"
+          "$PKG/uninstall.sh" --native --data-dir "$DATA"
+          diff "$RUNNER_TEMP/original.cfg" "$DATA/cura.cfg"
+          test ! -e "$DATA/plugins/InnerOuterInnerWalls"
+
+      - name: Create archive
+        run: |
+          cd dist
+          tar -czf "cura-inner-outer-inner-$CURA_VERSION-linux-x86_64.tar.gz" "cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.tar.gz
+
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 350
+    env:
+      CONAN_HOME: C:\cn
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Conan and UltiMaker's Conan config
+        shell: bash
+        run: |
+          pip install "conan>=2.7,<3"
+          conan config install https://github.com/ultimaker/conan-config.git
+          conan profile detect --force
+
+      - name: Restore Conan cache
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\cn\p
+          key: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
+          restore-keys: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-
+
+      - name: Build CuraEngine
+        shell: bash
+        working-directory: curaengine
+        run: conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS -of out
+
+      - name: Save Conan cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: C:\cn\p
+          key: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $exe = (Get-ChildItem curaengine\out -Recurse -Filter CuraEngine.exe | Select-Object -First 1).FullName
+          Write-Host "Built: $exe"
+          ./scripts/package-windows.ps1 -Exe $exe -Out "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64"
+
+      - name: Wall order test (packaged engine)
+        shell: pwsh
+        run: python tests/test_wall_order.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
+
+      - name: Installer test (fake Cura settings folder)
+        shell: pwsh
+        run: |
+          $pkg = Resolve-Path "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64"
+          $data = Join-Path $env:RUNNER_TEMP 'fake\cura\5.13'
+          $install = Join-Path $env:RUNNER_TEMP 'fake\engine'
+          New-Item -ItemType Directory -Force -Path $data | Out-Null
+          Set-Content -Path (Join-Path $data 'cura.cfg') -Value "[general]`nversion = 6`n`n[backend]`n`n[mesh]`n" -Encoding ascii
+          $before = Get-Content (Join-Path $data 'cura.cfg') -Raw
+          & "$pkg\install.ps1" -DataDir $data -InstallDir $install
+          if (-not (Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location = .*CuraEngine\.exe$')) { throw 'location line missing' }
+          if (-not (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\plugin.json'))) { throw 'plugin missing' }
+          & "$pkg\install.ps1" -DataDir $data -InstallDir $install   # idempotent
+          if ((Select-String -Path (Join-Path $data 'cura.cfg') -Pattern '^location =').Count -ne 1) { throw 'location line duplicated' }
+          & "$pkg\uninstall.ps1" -DataDir $data -InstallDir $install
+          if ((Get-Content (Join-Path $data 'cura.cfg') -Raw).Trim() -ne $before.Trim()) { throw 'cura.cfg not restored' }
+          if (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls')) { throw 'plugin not removed' }
+
+      - name: Create archive
+        shell: pwsh
+        run: Compress-Archive -Path "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64" -DestinationPath "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.zip
+
+  release:
+    needs: [linux, windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: assets/*
