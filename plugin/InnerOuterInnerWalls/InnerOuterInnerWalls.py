@@ -12,6 +12,8 @@ from UM.Settings.DefinitionContainer import DefinitionContainer
 from UM.Settings.SettingDefinition import SettingDefinition
 from cura.CuraApplication import CuraApplication
 
+from .settings_panel_speed import SettingsPanelSpeed
+
 FEATURES_FILE = "FEATURES"  # Written next to the patched engine; lists what that engine can do.
 
 # The version shown on the splash screen and in the About dialog is "<Cura version> (ioi <version of this add-on>)", for
@@ -60,6 +62,12 @@ class InnerOuterInnerWalls(Extension):
         ContainerRegistry.getInstance().containerLoadComplete.connect(self._on_container_load_complete)
         self._application.globalContainerStackChanged.connect(self._patch_active_machine)
         self._application.initializationFinished.connect(self._on_initialization_finished)
+
+        # Collapses the setting categories when a preset with hundreds of settings (such as All) is chosen, so the panel appears at once.
+        try:
+            self._settings_panel_speed = SettingsPanelSpeed()
+        except Exception:
+            Logger.logException("e", "Inner/Outer/Inner plugin: could not start the settings panel speed-up")
 
     # --- Version shown to the user ---------------------------------------------------------------------------------------
 

@@ -127,6 +127,22 @@ The idea and the acceptance rules are taken from the arc fitting in OrcaSlicer (
 
 The extruded amount follows the arc's real length. Cura's live layer view after slicing is unchanged (it shows the original path), but Cura's G-code *file* viewer does not handle G2/G3 (checked in its source), so a finished `.gcode` file opened in Cura will look incomplete there; other viewers vary.
 
+## Faster slicing and settings panel (1.2.0)
+
+**Slicing.** Three small changes make slicing faster without changing the result:
+
+- *Infill line ordering.* To choose which infill line to print next, the engine used to plan a full combing path (the route around the walls) for every candidate line. A line whose nearest end is not closer than the best candidate so far can never win, because a combing path is never shorter than the straight line, so it is now skipped. For a line, the combing path is only planned when the straight-line checks cannot decide which end is closer.
+- *Rounding of coordinates.* `PointMatrix::apply` and `unapply` (used when infill is rotated) round with one inline instruction instead of a library call. The result is identical.
+- *Bone infill grid.* Four waves are stepped side by side instead of one at a time. Each wave does the same arithmetic and the waves are added in the same order, so the result is identical.
+
+Measured with the settings Cura sent for a real print profile (all threads, median of five runs): a large part with a lot of infill sliced in about 6 s instead of 8 s (25 to 28 % faster in two sets of runs); one slice in Cura's own log went from 13.7 s to 9.5 s. A part with little infill gains only a few percent. With a single thread the two test parts were about 30 % and 55 % faster. The G-code writing stage is serial and is not sped up. Things that were tried and made no measurable difference: a RAM disk for the output, a different memory allocator, `-march` and link-time optimisation flags, and the GPU.
+
+How it was checked: with one thread the G-code of the test part is byte-for-byte identical to the previous engine. On a large model the previous engine itself does not always produce the same file twice (a thread-timing effect that was already there), so there the print time, layer count, move counts and arc counts were compared instead and fall inside the previous engine's own run-to-run spread.
+
+**Settings panel.** With the "All" visibility preset and every category expanded, Cura builds a widget for each of the roughly 700 settings at once, which took about 10 seconds with the interface frozen for several of them. The plugin now does what "Collapse All Categories" does when you pick a preset with hundreds of settings, so the panel appears at once and each category is built when you open it (a few tenths of a second each). It also collapses the saved state at start-up if everything was left expanded. Presets with fewer than 300 settings (Basic, Advanced, Expert) behave as before. The categories you open stay open until the next time you choose All.
+
+To turn it off, create `settings_panel.json` in the plugin folder with `{"mode": "measure"}`. That only writes the build times to Cura's log.
+
 ## How it was tested
 
 Every build runs these checks on the packaged engine, on **both Linux and Windows**:
@@ -141,7 +157,7 @@ By hand, in Cura 5.13.0 (Flatpak on Linux): the new options and all the new sett
 
 ## Version label
 
-The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.1.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.1.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
+The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.2.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.2.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
 
 ## Updates
 
@@ -155,6 +171,7 @@ The full CuraEngine source is in [`curaengine/`](curaengine). The history is arr
 2. `CuraEngine: add inner/outer/inner (sandwich) wall ordering`: four files, about 60 added lines.
 3. `CuraEngine: add arc fitting (G2/G3 output)`: new `ArcFitter` (`include/utils/ArcFitter.h`, `src/utils/ArcFitter.cpp`), a `GCodeExport::writeExtrusionArc` that writes G2/G3, the use of both in `LayerPlan::writeGCode`, and `Settings::hasRecursive`.
 4. `CuraEngine: add a bone-like (trabecular) infill pattern`: new `BoneInfill` (`include/infill/BoneInfill.h`, `src/infill/BoneInfill.cpp`), and the plumbing for the `bone` pattern (`EFillMethod::BONE`, the settings parser, the infill dispatch, the line stitching list and bridging).
+5. `CuraEngine: faster infill ordering, rounding and bone grid`: `PathOrderOptimizer.h` (skip candidates that cannot win, and decide a polyline's start end without a combing path where possible), `PointMatrix.h` and `PointMatrix.cpp` (inline rounding), and `BoneInfill.cpp` (four waves per step).
 
 The Cura side is the plugin in [`plugin/InnerOuterInnerWalls`](plugin/InnerOuterInnerWalls). It adds the new option values with Cura's own `extend_category` call, adds the setting definitions from [`settings.def.json`](plugin/InnerOuterInnerWalls/settings.def.json) to the printer definition, and makes them visible.
 
