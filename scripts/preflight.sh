@@ -26,12 +26,24 @@ step "plugin settings and metadata are valid JSON" python3 -c "import json; json
 step "workflows are valid YAML" python3 -c "import glob, yaml; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"
 step "no personal paths or addresses in the files to publish" sh -c '! git grep -n -I -E "/home/[a-z]+/|@gmail\.com|192\.168\.[0-9]+\.[0-9]+" -- . ":(exclude)curaengine" ":(exclude)scripts/preflight.sh"'
 
+# Words that must never be published (names, hostnames, ...) are kept in a private list on the developer's machine, not in
+# this repository, so that the list itself does not leak them. Without that file this check is skipped.
+PRIVATE="${IOI_PRIVATE_PATTERNS:-$HOME/.config/cura-ioi-private-patterns}"
+if [ -f "$PRIVATE" ]; then
+    step "private word list: none in the files to publish" sh -c "! git grep -n -I -i -E -f '$PRIVATE' -- . ':(exclude)curaengine'"
+    base=$(git rev-parse --verify -q origin/main || git rev-list --max-parents=0 HEAD)
+    step "private word list: none in the commit messages to push" sh -c "! git log '$base'..HEAD --format=%B | grep -i -E -f '$PRIVATE'"
+fi
+# Commits to push must use the GitHub no-reply address and UTC, so that neither an email address nor a timezone is published.
+base=$(git rev-parse --verify -q origin/main || git rev-list --max-parents=0 HEAD)
+step "commits to push: no-reply address and UTC timestamps" sh -c "git log '$base'..HEAD --format='%ae %ce %ad %cd' --date=iso | awk '{ if (\$1 !~ /@users\\.noreply\\.github\\.com\$/ || \$2 !~ /@users\\.noreply\\.github\\.com\$/ || \$5 != \"+0000\" || \$8 != \"+0000\") { print \"not allowed: \" \$0; bad=1 } } END { exit bad }'"
+
 stub=$(mktemp -d)
 step "install and uninstall scripts against a stub package" sh -c "tests/make_stub_package.sh '$stub/pkg' && tests/test_installer.sh '$stub/pkg' | tail -1 | grep -q 'ALL PASSED'"
 rm -rf "$stub"
 
 # Pushing workflow files needs the "workflow" permission on the GitHub login; check before GitHub refuses the push.
-if command -v gh > /dev/null 2>&1 && git rev-parse --verify -q origin/main > /dev/null && git diff --name-only origin/main...HEAD | grep -q '^\.github/workflows/'; then
+if command -v gh > /dev/null 2>&1 && git rev-parse --verify -q origin/main > /dev/null && git diff --name-only origin/main HEAD | grep -q '^\.github/workflows/'; then
     step "GitHub login may push workflow files (needs the 'workflow' scope)" sh -c "gh auth status 2>&1 | grep -q \"Token scopes:.*'workflow'\" || { echo \"run: gh auth refresh -h github.com -s workflow\"; exit 1; }"
 fi
 
