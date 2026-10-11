@@ -119,8 +119,55 @@ BoneInfill::Grid BoneInfill::evaluate(const double scale, const AABB& area, cons
         {
             double* row = grid.values.data() + j * grid.nx;
             const double y = grid.y0 + static_cast<double>(j) * grid.cell;
-            for (const Wave& wave : waves_)
+            const size_t wave_total = waves_.size();
+            size_t w = 0;
+
+            // Four waves at a time. Every wave runs its own rotation recurrence, which is a chain of dependent operations; stepping four independent
+            // chains side by side lets the CPU overlap them. Each wave still does exactly the same arithmetic and is added into the node in the same
+            // order as before, so the result is bit-for-bit identical to handling the waves one after the other.
+            for (; w + 4 <= wave_total; w += 4)
             {
+                double c[4], s[4], cd[4], sd[4];
+                for (size_t k = 0; k < 4; ++k)
+                {
+                    const Wave& wave = waves_[w + k];
+                    const double start = scale * (wave.kx * grid.x0 + wave.ky * y + wave.kz * z_mm) + wave.phase;
+                    const double step = scale * wave.kx * grid.cell;
+                    c[k] = std::cos(start);
+                    s[k] = std::sin(start);
+                    cd[k] = std::cos(step);
+                    sd[k] = std::sin(step);
+                }
+                double c0 = c[0], c1 = c[1], c2 = c[2], c3 = c[3];
+                double s0 = s[0], s1 = s[1], s2 = s[2], s3 = s[3];
+                const double cd0 = cd[0], cd1 = cd[1], cd2 = cd[2], cd3 = cd[3];
+                const double sd0 = sd[0], sd1 = sd[1], sd2 = sd[2], sd3 = sd[3];
+                for (size_t i = 0; i < grid.nx; ++i)
+                {
+                    double value = row[i];
+                    value += c0;
+                    value += c1;
+                    value += c2;
+                    value += c3;
+                    row[i] = value;
+                    const double c0_next = c0 * cd0 - s0 * sd0;
+                    const double c1_next = c1 * cd1 - s1 * sd1;
+                    const double c2_next = c2 * cd2 - s2 * sd2;
+                    const double c3_next = c3 * cd3 - s3 * sd3;
+                    s0 = s0 * cd0 + c0 * sd0;
+                    s1 = s1 * cd1 + c1 * sd1;
+                    s2 = s2 * cd2 + c2 * sd2;
+                    s3 = s3 * cd3 + c3 * sd3;
+                    c0 = c0_next;
+                    c1 = c1_next;
+                    c2 = c2_next;
+                    c3 = c3_next;
+                }
+            }
+
+            for (; w < wave_total; ++w)
+            {
+                const Wave& wave = waves_[w];
                 // cos(a + i * step) for every node of the row by rotating a vector, which avoids a cosine per node.
                 const double start = scale * (wave.kx * grid.x0 + wave.ky * y + wave.kz * z_mm) + wave.phase;
                 const double step = scale * wave.kx * grid.cell;
