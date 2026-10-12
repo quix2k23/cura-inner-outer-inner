@@ -43,6 +43,6 @@ if [ -f "$CFG" ]; then
     ' "$CFG" > "$CFG.new" && mv "$CFG.new" "$CFG"
     echo "Cura now uses its own engine again."
 fi
-rm -rf "$DATA/plugins/InnerOuterInnerWalls" "$DEST"
-echo "Removed the plugin and $DEST."
+rm -rf "$DATA/plugins/InnerOuterInnerWalls" "$DATA/plugins/PlateAutosave" "$DEST"
+echo "Removed the plugins and $DEST. Your last autosaved build plate (the plate_autosave folder next to Cura's settings) is kept."
 echo "If a print profile still says Inner/Outer/Inner, change Wall Ordering back before slicing."

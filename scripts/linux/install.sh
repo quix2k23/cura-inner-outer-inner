@@ -55,7 +55,7 @@ echo "Cura settings : $DATA ($MODE)"
 echo "Engine install: $DEST"
 
 [ -x "$HERE/engine/CuraEngine" ] || die "engine/CuraEngine missing next to this script"
-[ -f "$HERE/plugin/InnerOuterInnerWalls/plugin.json" ] || die "plugin/ missing next to this script"
+[ -f "$HERE/plugin/InnerOuterInnerWalls/plugin.json" ] && [ -f "$HERE/plugin/PlateAutosave/plugin.json" ] || die "plugin/ missing next to this script"
 
 # Install the engine first and check that it runs before touching any Cura settings.
 rm -rf "$DEST"
@@ -77,6 +77,8 @@ esac
 mkdir -p "$DATA/plugins"
 rm -rf "$DATA/plugins/InnerOuterInnerWalls"
 cp -a "$HERE/plugin/InnerOuterInnerWalls" "$DATA/plugins/InnerOuterInnerWalls"
+rm -rf "$DATA/plugins/PlateAutosave"
+cp -a "$HERE/plugin/PlateAutosave" "$DATA/plugins/PlateAutosave"
 
 # Point Cura at the patched engine ([backend] location in cura.cfg).
 [ -f "$CFG.bak-inner-outer-inner" ] || cp -a "$CFG" "$CFG.bak-inner-outer-inner"

@@ -16,7 +16,7 @@ if (-not $Force -and (Get-Process -Name 'UltiMaker-Cura' -ErrorAction SilentlyCo
     throw 'Cura is running. Close it first (or use -Force).'
 }
 if (-not (Test-Path (Join-Path $here 'engine\CuraEngine.exe'))) { throw 'engine\CuraEngine.exe missing next to this script' }
-if (-not (Test-Path (Join-Path $here 'plugin\InnerOuterInnerWalls\plugin.json'))) { throw 'plugin\ missing next to this script' }
+if (-not ((Test-Path (Join-Path $here 'plugin\InnerOuterInnerWalls\plugin.json')) -and (Test-Path (Join-Path $here 'plugin\PlateAutosave\plugin.json')))) { throw 'plugin\ missing next to this script' }
 
 Write-Host "Cura settings : $DataDir"
 Write-Host "Engine install: $InstallDir"
@@ -40,6 +40,9 @@ New-Item -ItemType Directory -Force -Path $plugins | Out-Null
 $pluginDest = Join-Path $plugins 'InnerOuterInnerWalls'
 if (Test-Path $pluginDest) { Remove-Item -Recurse -Force $pluginDest }
 Copy-Item -Recurse -Force (Join-Path $here 'plugin\InnerOuterInnerWalls') $pluginDest
+$autosaveDest = Join-Path $plugins 'PlateAutosave'
+if (Test-Path $autosaveDest) { Remove-Item -Recurse -Force $autosaveDest }
+Copy-Item -Recurse -Force (Join-Path $here 'plugin\PlateAutosave') $autosaveDest
 
 # Point Cura at the patched engine ([backend] location in cura.cfg).
 $backup = "$cfg.bak-inner-outer-inner"

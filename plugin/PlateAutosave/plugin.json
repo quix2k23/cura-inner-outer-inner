@@ -1,0 +1,8 @@
+{
+    "name": "Plate Autosave",
+    "author": "quix2k23",
+    "version": "1.0.0",
+    "description": "Saves the build plate layout every few minutes and when Cura quits, and restores it when Cura starts. Turn it on or off and set the interval in Preferences > General.",
+    "api": 8,
+    "supported_sdk_versions": ["8.0.0"]
+}

@@ -31,12 +31,12 @@ function RunCase($name, $startingConfig) {
     # Cura reads cura.cfg with Python's strict config parser, which refuses a file that has the same section twice.
     $sections = @(Get-Content $cfg | Where-Object { $_ -match '^\[.+\]\s*$' } | ForEach-Object { $_.Trim() })
     Check ($sections.Count -eq @($sections | Select-Object -Unique).Count) "${name}: cura.cfg has no duplicate sections"
-    Check ((Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\plugin.json')) -and (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\settings.def.json'))) "${name}: plugin files installed"
+    Check ((Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\plugin.json')) -and (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls\settings.def.json')) -and (Test-Path (Join-Path $data 'plugins\PlateAutosave\PlateAutosave.py'))) "${name}: plugin files installed"
     Check ((Test-Path (Join-Path $install 'FEATURES')) -and (Test-Path (Join-Path $install 'CuraEngine.exe'))) "${name}: engine and FEATURES file installed"
 
     & "$pkg\uninstall.ps1" -DataDir $data -InstallDir $install | Out-Null
     Check ((Normalize ([System.IO.File]::ReadAllText($cfg))) -eq (Normalize $before)) "${name}: uninstall restores cura.cfg"
-    Check (-not (Test-Path $install) -and -not (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls'))) "${name}: uninstall removes the engine and the plugin"
+    Check (-not (Test-Path $install) -and -not (Test-Path (Join-Path $data 'plugins\InnerOuterInnerWalls')) -and -not (Test-Path (Join-Path $data 'plugins\PlateAutosave'))) "${name}: uninstall removes the engine and the plugin"
 }
 
 RunCase 'empty_backend_section' "[general]`nversion = 6`n`n[backend]`n`n[mesh]`n"

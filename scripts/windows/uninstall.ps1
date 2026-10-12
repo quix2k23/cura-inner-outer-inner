@@ -17,8 +17,8 @@ if (Test-Path $cfg) {
     [System.IO.File]::WriteAllLines($cfg, $lines, (New-Object System.Text.UTF8Encoding($false)))
     Write-Host 'Cura now uses its own engine again.'
 }
-foreach ($path in @((Join-Path $DataDir 'plugins\InnerOuterInnerWalls'), $InstallDir)) {
+foreach ($path in @((Join-Path $DataDir 'plugins\InnerOuterInnerWalls'), (Join-Path $DataDir 'plugins\PlateAutosave'), $InstallDir)) {
     if (Test-Path $path) { Remove-Item -Recurse -Force $path }
 }
-Write-Host "Removed the plugin and $InstallDir."
+Write-Host "Removed the plugins and $InstallDir. Your last autosaved build plate (the plate_autosave folder next to Cura's settings) is kept."
 Write-Host 'If a print profile still says Inner/Outer/Inner, change Wall Ordering back before slicing.'

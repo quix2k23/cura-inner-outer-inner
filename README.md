@@ -1,12 +1,13 @@
 # Better walls, bone-like infill and arcs for UltiMaker Cura
 
-Three additions for **UltiMaker Cura 5.13**, as a patched slicing engine (CuraEngine) plus a small Cura plugin and installers for Linux and Windows:
+Three additions for **UltiMaker Cura 5.13**, as a patched slicing engine (CuraEngine) plus small Cura plugins and installers for Linux and Windows. A fourth, independent plugin, [**Plate Autosave**](#plate-autosave), keeps your build plate layout across restarts:
 
 | Feature | What it does | Where it shows up in Cura |
 |---|---|---|
 | [**Inner/Outer/Inner walls**](#innerouterinner-walls) | Prints the outer wall sandwiched between the walls inside it, like OrcaSlicer's wall sequence of the same name | *Wall Ordering* setting |
 | [**Bone infill**](#bone-infill) | A new infill pattern that imitates spongy (trabecular) bone: a connected network of thin plates and rods, lined up with a direction you choose, denser near the walls | *Infill Pattern* setting, with its own settings under it |
 | [**Arc fitting**](#arc-fitting-g2g3) | Writes curves as G2/G3 arcs instead of many tiny straight moves: much smaller G-code and smoother motion | *Experimental* settings |
+| [**Plate Autosave**](#plate-autosave) | Saves the build plate layout every few minutes and when Cura quits, and puts the models back when Cura starts | *Preferences > General > Opening and saving files* |
 
 This is an independent, unofficial modification and is not affiliated with UltiMaker. Everything is opt-in: with the default settings Cura slices exactly as before.
 
@@ -44,12 +45,12 @@ The new settings are added to Cura's visibility list automatically. The plugin o
 
 1. Copies the patched engine to a folder next to Cura's settings (`.../cura-inner-outer-inner`).
 2. Checks that the engine runs. If it does not, **nothing else is changed**.
-3. Copies the plugin to Cura's `plugins/InnerOuterInnerWalls` folder.
+3. Copies the plugins to Cura's `plugins/InnerOuterInnerWalls` and `plugins/PlateAutosave` folders.
 4. Backs up `cura.cfg` (as `cura.cfg.bak-inner-outer-inner`) and adds one line, `location = <path to the engine>`, under `[backend]`. That is the standard Cura preference for choosing the slicing engine.
 
 ### Uninstall
 
-Close Cura and run `uninstall.sh` (Linux) or `uninstall.bat` (Windows). It removes the plugin, deletes the engine and removes that one line from `cura.cfg`. If a saved profile still says *Bone* or *Inner/Outer/Inner*, change the setting back before you slice with Cura's own engine: an unpatched engine treats an unknown infill pattern as "no infill".
+Close Cura and run `uninstall.sh` (Linux) or `uninstall.bat` (Windows). It removes both plugins, deletes the engine and removes that one line from `cura.cfg` (your last autosaved build plate is kept). If a saved profile still says *Bone* or *Inner/Outer/Inner*, change the setting back before you slice with Cura's own engine: an unpatched engine treats an unknown infill pattern as "no infill".
 
 ## Inner/Outer/Inner walls
 
@@ -143,6 +144,23 @@ How it was checked: with one thread the G-code of the test part is byte-for-byte
 
 To turn it off, create `settings_panel.json` in the plugin folder with `{"mode": "measure"}`. That only writes the build times to Cura's log.
 
+## Plate Autosave
+
+Cura forgets the models on the build plate when it closes. This plugin remembers them.
+
+- **Saves** the plate to a 3MF file every 5 minutes and once more when Cura quits.
+- **Restores** the models, in the same places and with their per-model settings, about 3 seconds after Cura starts, if the build plate is empty. No dialog is shown.
+- **An empty plate** deletes the saved file, so models you removed do not come back.
+- **Settings** are in **Preferences > General > Opening and saving files**, under *Show summary dialog when saving project*: a checkbox *Autosave build plate layout* (turns the periodic save, the save on quit and the restore on or off) and *Autosave interval (minutes)*, from 1 to 1440, applied at once.
+
+It saves models, their positions and their per-model settings. It does not save the printer or the print profile, and with several build plates only the active one is saved. A crash can lose up to one interval of changes.
+
+How it stays safe: each save is checked (a valid zip that contains every model on the plate) before it replaces the previous file, which is kept as `plate_autosave.3mf.prev`. The files are written to a temporary file and then renamed, so a power cut leaves a complete file. If the main file is missing or damaged at start-up, the `.prev` file is used. The save on quit leaves out the thumbnail picture, because drawing it while Cura shuts down can hang. Any error is logged (look for `PlateAutosave` in Cura's `cura.log`) and never stops Cura from quitting.
+
+The files are in a `plate_autosave` folder next to Cura's versioned settings folder (for the Flatpak `~/.var/app/com.ultimaker.cura/data/cura/plate_autosave`). They are kept out of the versioned folder on purpose: Cura scans that folder at start-up and logs a warning for every file it does not know.
+
+Cura has no official way for a plugin to add options to Preferences, so the two controls are added to the open Preferences dialog by finding the *Show summary dialog when saving project* checkbox. If Cura's language is not English the controls are not added and the plugin runs with its defaults (on, every 5 minutes). The plugin works with a stock Cura engine and does not depend on the patched engine.
+
 ## How it was tested
 
 Every build runs these checks on the packaged engine, on **both Linux and Windows**:
@@ -153,11 +171,11 @@ Every build runs these checks on the packaged engine, on **both Linux and Window
 - The install and uninstall scripts are run against a throwaway Cura settings folder, including running the installer twice and checking that uninstall restores `cura.cfg` exactly.
 - The arc fitting was also replayed with the exact settings Cura sent to the engine for a real Klipper printer profile: 3,511 arcs, deviation 0.040 mm, extruded amount within 0.07 %, file size halved.
 
-By hand, in Cura 5.13.0 (Flatpak on Linux): the new options and all the new settings appear for the printer, the sliced G-code has the expected wall order, and the bone infill and arcs were checked by rendering layers and vertical sections of the sliced G-code. The Windows package passes the automated tests above but has **not yet been tried inside a real Windows Cura install**. Printed parts made with the bone infill or with arcs have not been checked yet, so print quality and strength are unverified; please open an issue if you find problems.
+By hand, in Cura 5.13.0 (Flatpak on Linux): Plate Autosave saved, restored and saved on quit as described above and its Preferences controls work (the plugin has no automated test; the installer tests only check that its files are installed and removed); the new options and all the new settings appear for the printer, the sliced G-code has the expected wall order, and the bone infill and arcs were checked by rendering layers and vertical sections of the sliced G-code. The Windows package passes the automated tests above but has **not yet been tried inside a real Windows Cura install**. Printed parts made with the bone infill or with arcs have not been checked yet, so print quality and strength are unverified; please open an issue if you find problems.
 
 ## Version label
 
-The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.2.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.2.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
+The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.3.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.3.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
 
 ## Updates
 

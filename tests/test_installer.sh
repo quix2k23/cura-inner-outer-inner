@@ -30,6 +30,7 @@ run_case() {
     # Cura reads cura.cfg with Python's strict config parser, which refuses a file that has the same section twice.
     if python3 -c "import configparser, sys; configparser.ConfigParser(interpolation=None, strict=True).read(sys.argv[1])" "$DATA/cura.cfg" 2> /dev/null; then pass "$NAME: cura.cfg is still valid for Cura's config parser"; else fail "$NAME: cura.cfg is no longer valid (duplicate section?)"; fi
     [ -f "$DATA/plugins/InnerOuterInnerWalls/plugin.json" ] && [ -f "$DATA/plugins/InnerOuterInnerWalls/settings.def.json" ] \
+        && [ -f "$DATA/plugins/PlateAutosave/plugin.json" ] && [ -f "$DATA/plugins/PlateAutosave/PlateAutosave.py" ] \
         && pass "$NAME: plugin files installed" || fail "$NAME: plugin files missing"
     [ -f "$DEST/FEATURES" ] && [ -x "$DEST/CuraEngine" ] && pass "$NAME: engine and FEATURES file installed" || fail "$NAME: engine files missing"
 
@@ -37,7 +38,7 @@ run_case() {
     # An empty [backend] header left behind is fine: Cura writes those itself.
     strip() { tr -d '\r' < "$1" | grep -v '^\[backend\]$' | grep -v '^$' || true; }
     if cmp -s "$ROOT/original.cfg" "$DATA/cura.cfg" || [ "$(strip "$ROOT/original.cfg")" = "$(strip "$DATA/cura.cfg")" ]; then pass "$NAME: uninstall restores cura.cfg"; else fail "$NAME: cura.cfg not restored"; fi
-    [ ! -e "$DEST" ] && [ ! -e "$DATA/plugins/InnerOuterInnerWalls" ] && pass "$NAME: uninstall removes the engine and the plugin" || fail "$NAME: leftovers after uninstall"
+    [ ! -e "$DEST" ] && [ ! -e "$DATA/plugins/InnerOuterInnerWalls" ] && [ ! -e "$DATA/plugins/PlateAutosave" ] && pass "$NAME: uninstall removes the engine and the plugin" || fail "$NAME: leftovers after uninstall"
 }
 
 run_case empty_backend_section '[general]\nversion = 6\n\n[backend]\n\n[mesh]\n'

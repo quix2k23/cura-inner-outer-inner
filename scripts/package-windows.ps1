@@ -17,6 +17,7 @@ foreach ($name in 'vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll', 'msv
     if ((Test-Path $source) -and -not (Test-Path (Join-Path $Out "engine\$name"))) { Copy-Item $source (Join-Path $Out 'engine') }
 }
 Copy-Item -Recurse (Join-Path $root 'plugin\InnerOuterInnerWalls') (Join-Path $Out 'plugin')
+Copy-Item -Recurse (Join-Path $root 'plugin\PlateAutosave') (Join-Path $Out 'plugin')
 Copy-Item (Join-Path $root 'scripts\windows\*') $Out
 Copy-Item (Join-Path $root 'README.md'), (Join-Path $root 'LICENSE') $Out
 Get-ChildItem (Join-Path $Out 'engine') | Select-Object Name, Length | Format-Table | Out-String | Write-Host

@@ -10,6 +10,6 @@ printf '#!/bin/sh\necho "Cura_SteamEngine version 5.13.0"\n' > "$OUT/engine/Cura
 cp "$OUT/engine/CuraEngine" "$OUT/engine/CuraEngine.bin"
 printf '# stub\ninner_outer_inner\narc_fitting\nbone_infill\n' > "$OUT/engine/FEATURES"
 chmod +x "$OUT/engine/CuraEngine" "$OUT/engine/CuraEngine.bin"
-cp -r "$ROOT/plugin/InnerOuterInnerWalls" "$OUT/plugin/"
+cp -r "$ROOT/plugin/InnerOuterInnerWalls" "$ROOT/plugin/PlateAutosave" "$OUT/plugin/"
 cp "$ROOT/scripts/linux/install.sh" "$ROOT/scripts/linux/uninstall.sh" "$OUT/"
 chmod +x "$OUT/install.sh" "$OUT/uninstall.sh"

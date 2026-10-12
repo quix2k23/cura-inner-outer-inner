@@ -21,8 +21,8 @@ step() {
 }
 
 step "shell scripts parse" sh -c 'for f in scripts/*.sh scripts/linux/*.sh tests/*.sh .githooks/*; do sh -n "$f" || exit 1; done'
-step "python scripts compile" sh -c 'for f in tests/*.py plugin/InnerOuterInnerWalls/*.py; do python3 -c "import sys; compile(open(sys.argv[1]).read(), sys.argv[1], \"exec\")" "$f" || exit 1; done'
-step "plugin settings and metadata are valid JSON" python3 -c "import json; json.load(open('plugin/InnerOuterInnerWalls/settings.def.json')); json.load(open('plugin/InnerOuterInnerWalls/plugin.json'))"
+step "python scripts compile" sh -c 'for f in tests/*.py plugin/InnerOuterInnerWalls/*.py plugin/PlateAutosave/*.py; do python3 -c "import sys; compile(open(sys.argv[1]).read(), sys.argv[1], \"exec\")" "$f" || exit 1; done'
+step "plugin settings and metadata are valid JSON" python3 -c "import json; json.load(open('plugin/InnerOuterInnerWalls/settings.def.json')); json.load(open('plugin/InnerOuterInnerWalls/plugin.json')); json.load(open('plugin/PlateAutosave/plugin.json'))"
 step "workflows are valid YAML" python3 -c "import glob, yaml; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"
 step "no personal paths or addresses in the files to publish" sh -c '! git grep -n -I -E "/home/[a-z]+/|@gmail\.com|192\.168\.[0-9]+\.[0-9]+" -- . ":(exclude)curaengine" ":(exclude)scripts/preflight.sh"'
 
