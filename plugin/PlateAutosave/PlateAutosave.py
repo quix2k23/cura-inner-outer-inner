@@ -231,7 +231,12 @@ class PlateAutosave(Extension):
         try:
             path = self._loadableSave()
             Logger.info("PlateAutosave: restore check, usable save: %s", path)
-            if path and self._enabled() and not self._plateNodes():
+            # Files given on the command line (e.g. an STL double-clicked in a file manager) load in a background job,
+            # so the plate can still look empty here; restoring would put the old plate in their place.
+            launched_with_files = bool(getattr(self._app, "_files_to_open", None) or getattr(self._app, "_open_file_queue", None))
+            if launched_with_files:
+                Logger.info("PlateAutosave: Cura was opened with files, not restoring")
+            elif path and self._enabled() and not self._plateNodes():
                 Logger.info("PlateAutosave: restoring %s", path)
                 self._app.readLocalFile(QUrl.fromLocalFile(path), add_to_recent_files = False)
         except Exception:

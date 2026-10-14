@@ -175,7 +175,7 @@ By hand, in Cura 5.13.0 (Flatpak on Linux): Plate Autosave saved, restored and s
 
 ## Version label
 
-The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.3.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.3.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
+The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.3.1)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.3.1` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
 
 ## Updates
 
