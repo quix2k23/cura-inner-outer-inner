@@ -8,6 +8,7 @@ identified from its size: wall N is N * 0.4 mm further inside than the outer wal
 """
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -45,10 +46,14 @@ def write_ring_stl(path):
 
 
 def slice_ring(engine, workdir, inset_direction, walls, gcode, initial_direction=None):
+    local = os.environ.get("CURA_DEFINITIONS_DIR")  # Definitions of another Cura version, if set.
     for name in ("fdmprinter.def.json", "fdmextruder.def.json"):
         target = os.path.join(workdir, name)
         if not os.path.exists(target):
-            urllib.request.urlretrieve(DEFINITION_URL % name, target)
+            if local:
+                shutil.copy(os.path.join(local, name), target)
+            else:
+                urllib.request.urlretrieve(DEFINITION_URL % name, target)
     stl = os.path.join(workdir, "ring.stl")
     write_ring_stl(stl)
     common = ["-s", "wall_line_count=%d" % walls, "-s", "inset_direction=%s" % inset_direction,

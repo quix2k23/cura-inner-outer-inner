@@ -2,6 +2,7 @@
 import math
 import os
 import re
+import shutil
 import subprocess
 import urllib.request
 from collections import defaultdict
@@ -54,11 +55,19 @@ def round_ring(path, outer=15.0, inner=5.0, height=6.0, wedges=120):
 
 
 def slice_model(engine, workdir, stl, gcode, settings=None):
-    """Slice a model with the given settings; returns the path of the G-code."""
+    """Slice a model with the given settings; returns the path of the G-code.
+
+    The setting definitions come from Cura 5.13.0 on GitHub, unless the environment variable CURA_DEFINITIONS_DIR names a
+    folder with fdmprinter.def.json and fdmextruder.def.json (for an engine built from a different version of Cura).
+    """
+    local = os.environ.get("CURA_DEFINITIONS_DIR")
     for name in ("fdmprinter.def.json", "fdmextruder.def.json"):
         target = os.path.join(workdir, name)
         if not os.path.exists(target):
-            urllib.request.urlretrieve(DEFINITION_URL % name, target)
+            if local:
+                shutil.copy(os.path.join(local, name), target)
+            else:
+                urllib.request.urlretrieve(DEFINITION_URL % name, target)
     merged = {"machine_width": 300, "machine_depth": 300, "machine_height": 300, "machine_center_is_zero": "false",
               "layer_height": 0.2, "layer_height_0": 0.2, "adhesion_type": "none", "wall_line_count": 2,
               "top_layers": 3, "bottom_layers": 3, "infill_angle": 0}
