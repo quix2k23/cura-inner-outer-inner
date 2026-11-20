@@ -55,6 +55,13 @@ jobs:
           key: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
           restore-keys: conan-linux-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-
 
+      - name: Check that the Conan options take effect
+        working-directory: curaengine
+        run: |
+          set -f
+          conan graph info . -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS --format=json > ../conan-graph.json
+          python3 ../scripts/check-conan-options.py ../conan-graph.json $CONAN_OPTIONS
+
       - name: Build CuraEngine
         working-directory: curaengine
         # $CONAN_OPTIONS is split into words unquoted, so it must not contain quote characters (Conan would get them
@@ -125,6 +132,14 @@ jobs:
           path: C:\cn\p
           key: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-${{ github.run_id }}
           restore-keys: conan-windows-${{ hashFiles('curaengine/conanfile.py', 'curaengine/conandata.yml') }}-
+
+      - name: Check that the Conan options take effect
+        shell: bash
+        working-directory: curaengine
+        run: |
+          set -f
+          conan graph info . -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS --format=json > ../conan-graph.json
+          python ../scripts/check-conan-options.py ../conan-graph.json $CONAN_OPTIONS
 
       - name: Build CuraEngine
         shell: bash

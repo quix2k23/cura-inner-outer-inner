@@ -198,7 +198,7 @@ The Cura side is the plugin in [`plugin/InnerOuterInnerWalls`](plugin/InnerOuter
 
 ## Development
 
-Quick checks (script syntax, JSON and YAML, no personal data in the published files, and the install and uninstall scripts against a stand-in engine) run in about a second with `scripts/preflight.sh`, and on GitHub for every push (`checks` workflow). To run them automatically before each push: `git config core.hooksPath .githooks`. Pass `CURA_ENGINE=/path/to/CuraEngine` to the script to run the engine tests on a binary too. The release build (`build` workflow) takes much longer, so it only runs for version tags and when started by hand.
+Quick checks (script syntax, JSON and YAML, no personal data in the published files, and the install and uninstall scripts against a stand-in engine) run in about a second with `scripts/preflight.sh`, and on GitHub for every push (`checks` workflow). To run them automatically before each push: `git config core.hooksPath .githooks`. Pass `CURA_ENGINE=/path/to/CuraEngine` to the script to run the engine tests on a binary too. The release build (`build` workflow) takes much longer, so it only runs for version tags and when started by hand. Before it compiles, it checks with `scripts/check-conan-options.py` that every `-o` option passed to Conan really took effect, because Conan silently ignores an option whose package pattern matches nothing.
 
 ## Build from source
 
