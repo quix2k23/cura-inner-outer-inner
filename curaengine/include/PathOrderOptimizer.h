@@ -659,6 +659,18 @@ protected:
                 continue;
             }
 
+            if (combing_boundary_ && ! path->is_closed_ && best_distance2 != std::numeric_limits<coord_t>::max())
+            {
+                // A polyline's distance is at least the direct distance to its nearest end (combing never shortens a path), so it can't beat the best
+                // candidate when even that is not shorter. Skipping it also skips the expensive start location search. The candidate's start vertex
+                // is recomputed whenever it is evaluated again, so leaving it stale here is harmless.
+                const coord_t lower_bound = std::min(getDirectDistance(start_position, path->converted_->front()), getDirectDistance(start_position, path->converted_->back()));
+                if (lower_bound >= best_distance2)
+                {
+                    continue;
+                }
+            }
+
             const bool precompute_start = path->seam_config_.type_ == EZSeamType::RANDOM || path->seam_config_.type_ == EZSeamType::USER_SPECIFIED
                                        || path->seam_config_.type_ == EZSeamType::SHARPEST_CORNER;
             if (! path->is_closed_ || ! precompute_start) // Find the start location unless we've already precomputed it.
@@ -753,11 +765,42 @@ protected:
         if (! path.is_closed_)
         {
             // For polylines, the seam settings are not applicable. Simply choose the position closest to target_pos then.
-            const coord_t back_distance
-                = (combing_boundary_ == nullptr) ? getDirectDistance(path.converted_->back(), target_pos) : getCombingDistance(path.converted_->back(), target_pos);
-            if (back_distance < getDirectDistance(path.converted_->front(), target_pos)
-                || (combing_boundary_
-                    && back_distance < getCombingDistance(path.converted_->front(), target_pos))) // Lazy or: Only compute combing distance if direct distance is closer.
+            const Point2LL& back = path.converted_->back();
+            const Point2LL& front = path.converted_->front();
+            const coord_t direct_back = getDirectDistance(back, target_pos);
+            const coord_t direct_front = getDirectDistance(front, target_pos);
+            if (combing_boundary_ == nullptr)
+            {
+                return direct_back < direct_front ? path.converted_->size() - 1 : 0;
+            }
+
+            // The back end wins iff combing(back) < combing(front). A combing distance is never shorter than the direct distance, and it
+            // equals it when the straight line doesn't hit the combing boundary. That decides most cases without generating a combing path,
+            // which is by far the most expensive step here. The result is the same as computing both combing distances.
+            const bool back_blocked = PolygonUtils::polygonCollidesWithLineSegment(*combing_boundary_, back, target_pos);
+            const bool front_blocked = PolygonUtils::polygonCollidesWithLineSegment(*combing_boundary_, front, target_pos);
+            if (! back_blocked && ! front_blocked)
+            {
+                return direct_back < direct_front ? path.converted_->size() - 1 : 0;
+            }
+            if (! front_blocked) // combing(front) == direct_front, combing(back) >= direct_back
+            {
+                if (direct_back >= direct_front)
+                {
+                    return 0; // Front end is closer.
+                }
+                return getBlockedCombingDistance(back, target_pos) < direct_front ? path.converted_->size() - 1 : 0;
+            }
+            if (! back_blocked) // combing(back) == direct_back, combing(front) >= direct_front
+            {
+                if (direct_back < direct_front)
+                {
+                    return path.converted_->size() - 1; // Back end is closer.
+                }
+                return direct_back < getBlockedCombingDistance(front, target_pos) ? path.converted_->size() - 1 : 0;
+            }
+            const coord_t back_distance = getBlockedCombingDistance(back, target_pos);
+            if (back_distance < direct_front || back_distance < getBlockedCombingDistance(front, target_pos)) // Lazy or: Only compute the second combing distance if needed.
             {
                 return path.converted_->size() - 1; // Back end is closer.
             }
@@ -879,6 +922,14 @@ protected:
         {
             return getDirectDistance(a, b); // No collision with any line. Just compute the direct distance then.
         }
+        return getBlockedCombingDistance(a, b);
+    }
+
+    /*!
+     * Like \ref getCombingDistance, but only for a straight line a-b that is known to collide with the combing boundary.
+     */
+    coord_t getBlockedCombingDistance(const Point2LL& a, const Point2LL& b)
+    {
         if (paths_.size() > 100)
         {
             /* If we have many paths to optimize the order for, this combing

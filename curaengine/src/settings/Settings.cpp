@@ -444,6 +444,8 @@ EFillMethod Settings::get<EFillMethod>(const std::string& key) const
         return EFillMethod::HONEYCOMB;
     case "octagon"_sw:
         return EFillMethod::OCTAGON;
+    case "bone"_sw:
+        return EFillMethod::BONE;
     case "plugin"_sw:
         return EFillMethod::PLUGIN;
     default:
@@ -684,6 +686,8 @@ InsetDirection Settings::get<InsetDirection>(const std::string& key) const
         return InsetDirection::INSIDE_OUT;
     case "outside_in"_sw:
         return InsetDirection::OUTSIDE_IN;
+    case "inner_outer_inner"_sw:
+        return InsetDirection::INNER_OUTER_INNER;
     case "plugin"_sw:
         return InsetDirection::PLUGIN;
     default:
@@ -889,6 +893,11 @@ bool Settings::has(const std::string& key, const bool parent_lookup) const
     }
 
     return false;
+}
+
+bool Settings::hasRecursive(const std::string& key) const
+{
+    return has(key) || (parent != nullptr && parent->hasRecursive(key));
 }
 
 void Settings::setParent(const Settings* new_parent)

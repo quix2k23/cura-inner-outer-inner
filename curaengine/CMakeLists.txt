@@ -131,6 +131,7 @@ set(engine_SRCS # Except main.cpp.
         src/gcode_export/GcodeTemplateResolver.cpp
 
         src/infill/AbstractLinesInfill.cpp
+        src/infill/BoneInfill.cpp
         src/infill/ImageBasedDensityProvider.cpp
         src/infill/NoZigZagConnectorProcessor.cpp
         src/infill/ZigzagConnectorProcessor.cpp
@@ -170,6 +171,7 @@ set(engine_SRCS # Except main.cpp.
         src/utils/CuraViz.cpp
         src/utils/Date.cpp
         src/utils/ExtrusionJunction.cpp
+        src/utils/ArcFitter.cpp
         src/utils/ExtrusionLine.cpp
         src/utils/ExtrusionSegment.cpp
         src/utils/gettime.cpp

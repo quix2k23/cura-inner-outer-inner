@@ -49,20 +49,6 @@ PointMatrix PointMatrix::scale(double s)
     return ret;
 }
 
-Point2LL PointMatrix::apply(const Point2LL& p) const
-{
-    const auto x = static_cast<double>(p.X);
-    const auto y = static_cast<double>(p.Y);
-    return { std::llrint(x * matrix.at(0) + y * matrix.at(1)), std::llrint(x * matrix.at(2) + y * matrix.at(3)) };
-}
-
-Point2LL PointMatrix::unapply(const Point2LL& p) const
-{
-    const auto x = static_cast<double>(p.X);
-    const auto y = static_cast<double>(p.Y);
-    return { std::llrint(x * matrix.at(0) + y * matrix.at(2)), std::llrint(x * matrix.at(1) + y * matrix.at(3)) };
-}
-
 PointMatrix PointMatrix::inverse() const
 {
     PointMatrix ret;
