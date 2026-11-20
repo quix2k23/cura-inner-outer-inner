@@ -18,7 +18,7 @@ env:
   CURA_VERSION: 5.14.0
   CONAN_OPTIONS: >-
     -s build_type=Release -s compiler.cppstd=20
-    -o "curaengine/*:enable_plugins=True" -o "curaengine/*:enable_arcus=True" -o "hwloc/*:shared=True"
+    -o curaengine/*:enable_plugins=True -o curaengine/*:enable_arcus=True -o hwloc/*:shared=True
     -c tools.build:skip_test=True
 
 jobs:
@@ -57,7 +57,9 @@ jobs:
 
       - name: Build CuraEngine
         working-directory: curaengine
-        run: conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS -of out
+        # $CONAN_OPTIONS is split into words unquoted, so it must not contain quote characters (Conan would get them
+        # literally and silently ignore the option); set -f stops the shell from expanding the * patterns.
+        run: set -f; conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS -of out
 
       # Saved even when the build fails, so a retry does not start from zero.
       - name: Save Conan cache
@@ -127,7 +129,9 @@ jobs:
       - name: Build CuraEngine
         shell: bash
         working-directory: curaengine
-        run: conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS -of out
+        # $CONAN_OPTIONS is split into words unquoted, so it must not contain quote characters (Conan would get them
+        # literally and silently ignore the option); set -f stops the shell from expanding the * patterns.
+        run: set -f; conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS -of out
 
       - name: Save Conan cache
         if: always()
