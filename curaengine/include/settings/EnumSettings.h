@@ -29,7 +29,6 @@ enum class EFillMethod
     LIGHTNING,
     HONEYCOMB,
     OCTAGON,
-    BONE,
     NONE, // NOTE: Should remain second last! Before PLUGIN (Might be used in testing to enumerate the enum.)
     PLUGIN, // Place plugin after none to prevent it from being tested in the gtest suite.
 };
@@ -244,12 +243,6 @@ enum class InsetDirection
      * The outermost wall is printed first, then the second wall, etc.
      */
     OUTSIDE_IN,
-
-    /*!
-     * Sandwich order: the third wall and all deeper walls are printed first from the inside out, then the outermost wall, then the second wall.
-     * With only two walls this is outside in. Only applies when all walls use the same extruder.
-     */
-    INNER_OUTER_INNER,
 
     /*!
      * If the innermost wall is a central wall, it is printed last. Otherwise

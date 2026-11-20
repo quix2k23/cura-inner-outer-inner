@@ -444,8 +444,6 @@ EFillMethod Settings::get<EFillMethod>(const std::string& key) const
         return EFillMethod::HONEYCOMB;
     case "octagon"_sw:
         return EFillMethod::OCTAGON;
-    case "bone"_sw:
-        return EFillMethod::BONE;
     case "plugin"_sw:
         return EFillMethod::PLUGIN;
     default:
@@ -686,8 +684,6 @@ InsetDirection Settings::get<InsetDirection>(const std::string& key) const
         return InsetDirection::INSIDE_OUT;
     case "outside_in"_sw:
         return InsetDirection::OUTSIDE_IN;
-    case "inner_outer_inner"_sw:
-        return InsetDirection::INNER_OUTER_INNER;
     case "plugin"_sw:
         return InsetDirection::PLUGIN;
     default:
@@ -873,17 +869,29 @@ const std::string Settings::getAllSettingsString() const
     return sstream.str();
 }
 
-bool Settings::has(const std::string& key) const
+bool Settings::has(const std::string& key, const bool parent_lookup) const
 {
-    return settings.find(key) != settings.end();
+    const bool has_key = settings.contains(key);
+    if (has_key || ! parent_lookup)
+    {
+        return has_key;
+    }
+
+    const std::unordered_map<std::string, ExtruderTrain*>& limit_to_extruder = Application::getInstance().current_slice_->scene.limit_to_extruder;
+    if (limit_to_extruder.find(key) != limit_to_extruder.end())
+    {
+        return limit_to_extruder.at(key)->settings_.has(key, parent_lookup);
+    }
+
+    if (parent)
+    {
+        return parent->has(key, parent_lookup);
+    }
+
+    return false;
 }
 
-bool Settings::hasRecursive(const std::string& key) const
-{
-    return has(key) || (parent != nullptr && parent->hasRecursive(key));
-}
-
-void Settings::setParent(Settings* new_parent)
+void Settings::setParent(const Settings* new_parent)
 {
     parent = new_parent;
 }
