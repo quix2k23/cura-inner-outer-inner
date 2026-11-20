@@ -48,7 +48,7 @@ if command -v gh > /dev/null 2>&1 && git rev-parse --verify -q origin/main > /de
 fi
 
 if [ -n "${CURA_ENGINE:-}" ]; then
-    for t in test_wall_order test_arcs test_bone_infill; do
+    for t in test_wall_order test_arcs test_bone_infill test_layer_change_retract; do
         step "$t on $CURA_ENGINE" sh -c "python3 tests/$t.py '$CURA_ENGINE' | tail -1 | grep -q 'ALL PASSED'"
     done
 fi

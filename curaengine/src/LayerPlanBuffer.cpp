@@ -147,7 +147,9 @@ void LayerPlanBuffer::addConnectingTravelMove(LayerPlan* prev_layer, const Layer
             const InsetDirection inset_direction = mesh_settings.get<InsetDirection>("inset_direction");
             const size_t wall_line_count = mesh_settings.get<size_t>("wall_line_count");
 
-            next_mesh_retract_before_outer_wall = inset_direction == InsetDirection::OUTSIDE_IN || wall_line_count == 1;
+            // Inner/outer/inner with two walls prints the outer wall first, the same as outside in.
+            next_mesh_retract_before_outer_wall = inset_direction == InsetDirection::OUTSIDE_IN || wall_line_count == 1
+                                               || (inset_direction == InsetDirection::INNER_OUTER_INNER && wall_line_count == 2);
         }
         const ForceRetract force_retract = (retract_at_layer_change || next_mesh_retract_before_outer_wall) ? ForceRetract::RETRACTED : ForceRetract::AUTOMATIC;
         prev_layer->final_travel_z_ = newest_layer->z_;

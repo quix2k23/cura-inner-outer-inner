@@ -82,6 +82,9 @@ jobs:
       - name: Bone infill test (packaged engine)
         run: python3 tests/test_bone_infill.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
 
+      - name: Layer change retraction test
+        run: python3 tests/test_layer_change_retract.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
+
       - name: Installer test (fake Cura settings folder)
         run: tests/test_installer.sh "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
 
@@ -151,6 +154,10 @@ jobs:
       - name: Bone infill test (packaged engine)
         shell: pwsh
         run: python tests/test_bone_infill.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
+
+      - name: Layer change retraction test
+        shell: pwsh
+        run: python tests/test_layer_change_retract.py "dist\cura-inner-outer-inner-$env:CURA_VERSION-windows-x64\engine\CuraEngine.exe"
 
       - name: Installer test (fake Cura settings folder)
         shell: powershell
