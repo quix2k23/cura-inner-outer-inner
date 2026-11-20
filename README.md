@@ -1,6 +1,6 @@
 # Better walls, bone-like infill and arcs for UltiMaker Cura
 
-Three additions for **UltiMaker Cura 5.13**, as a patched slicing engine (CuraEngine) plus small Cura plugins and installers for Linux and Windows. A fourth, independent plugin, [**Plate Autosave**](#plate-autosave), keeps your build plate layout across restarts:
+Three additions for **UltiMaker Cura 5.14**, as a patched slicing engine (CuraEngine) plus small Cura plugins and installers for Linux and Windows. A fourth, independent plugin, [**Plate Autosave**](#plate-autosave), keeps your build plate layout across restarts:
 
 | Feature | What it does | Where it shows up in Cura |
 |---|---|---|
@@ -13,13 +13,13 @@ This is an independent, unofficial modification and is not affiliated with UltiM
 
 ## Install
 
-You need **UltiMaker Cura 5.13** installed and started at least once. Download the archive for your system from the [latest release](../../releases/latest), unpack it, and **close Cura** before running the installer. Nothing in Cura's own install folder is modified.
+You need **UltiMaker Cura 5.14** installed and started at least once. Download the archive for your system from the [latest release](../../releases/latest), unpack it, and **close Cura** before running the installer. Nothing in Cura's own install folder is modified.
 
 ### Linux (Flatpak, AppImage or distro package)
 
 ```sh
-tar xzf cura-inner-outer-inner-5.13.0-linux-x86_64.tar.gz
-cd cura-inner-outer-inner-5.13.0-linux-x86_64
+tar xzf cura-inner-outer-inner-5.14.0-linux-x86_64.tar.gz
+cd cura-inner-outer-inner-5.14.0-linux-x86_64
 ./install.sh
 ```
 
@@ -27,7 +27,7 @@ The script finds your Flatpak or native Cura settings folder by itself. Use `--f
 
 ### Windows
 
-1. Unzip `cura-inner-outer-inner-5.13.0-windows-x64.zip`.
+1. Unzip `cura-inner-outer-inner-5.14.0-windows-x64.zip`.
 2. Close Cura.
 3. Double-click `install.bat` (or run `powershell -ExecutionPolicy Bypass -File install.ps1`).
 
@@ -167,19 +167,20 @@ Every build runs these checks on the packaged engine, on **both Linux and Window
 
 - `tests/test_wall_order.py`: the printed wall order for 2, 3 and 4 walls, that "Inside To Outside" is unchanged, and that the first layer follows *Initial Layer Wall Ordering* while the other layers follow *Wall Ordering*.
 - `tests/test_arcs.py`: a round part is sliced with and without arcs. The arcs must stay within the tolerance of the original path (measured 0.036 mm for a 0.05 mm tolerance), extrude the same material (within 0.05 %), have matching start and end radius for the firmware, and make the G-code at least 40 % smaller (measured 3.3 times smaller).
+- `tests/test_layer_change_retract.py`: with "Retract Before Outer Wall: Always", every layer change is retracted for outside in and for inner/outer/inner with two walls (which also prints the outer wall first), and not forced for inside out.
 - `tests/test_bone_infill.py`: the infill length follows the line distance (the test allows 15 %; measured within 5 %), the same seed gives identical G-code and another seed a different one, 99 % of the infill is supported by infill below it, alignment makes the struts upright (99 % of the points line up with the layer below vs 62 % without alignment), the infill stays inside the walls, and the dense zone adds infill near the walls but not in the middle.
 - The install and uninstall scripts are run against a throwaway Cura settings folder, including running the installer twice and checking that uninstall restores `cura.cfg` exactly.
 - The arc fitting was also replayed with the exact settings Cura sent to the engine for a real Klipper printer profile: 3,511 arcs, deviation 0.040 mm, extruded amount within 0.07 %, file size halved.
 
-By hand, in Cura 5.13.0 (Flatpak on Linux): Plate Autosave saved, restored and saved on quit as described above and its Preferences controls work (the plugin has no automated test; the installer tests only check that its files are installed and removed); the new options and all the new settings appear for the printer, the sliced G-code has the expected wall order, and the bone infill and arcs were checked by rendering layers and vertical sections of the sliced G-code. The Windows package passes the automated tests above but has **not yet been tried inside a real Windows Cura install**. Printed parts made with the bone infill or with arcs have not been checked yet, so print quality and strength are unverified; please open an issue if you find problems.
+By hand, in Cura 5.13.0 (Flatpak on Linux): Plate Autosave saved, restored and saved on quit as described above and its Preferences controls work (the plugin has no automated test; the installer tests only check that its files are installed and removed); the new options and all the new settings appear for the printer, the sliced G-code has the expected wall order, and the bone infill and arcs were checked by rendering layers and vertical sections of the sliced G-code. In Cura 5.14.0 (Flatpak on Linux) the plugins load with the 5.14 engine and a real model slices and looks right in the layer view; the other hand checks were not repeated on 5.14. The Windows package passes the automated tests above but has **not yet been tried inside a real Windows Cura install**. Printed parts made with the bone infill or with arcs have not been checked yet, so print quality and strength are unverified; please open an issue if you find problems.
 
 ## Version label
 
-The splash screen and the About dialog of a modified Cura show the version as **`5.13.0 (ioi 1.3.1)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.13.0+ioi.1.3.1` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.13.0`) for backups, update checks and plugin compatibility. Official Cura 5.13.1 or 5.13.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
+The splash screen and the About dialog of a modified Cura show the version as **`5.14.0 (ioi 1.4.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.14.0+ioi.1.4.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.14.0`) for backups, update checks and plugin compatibility. Official Cura 5.14.1 or 5.14.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
 
 ## Updates
 
-The engine is built from CuraEngine **5.13.0** and is meant for Cura 5.13.x. When Cura updates to a new version, the engine from this project is no longer matched to it: uninstall, then check whether a new release is available here.
+The engine is built from CuraEngine **5.14.0** and is meant for Cura 5.14.x. When Cura updates to a new version, the engine from this project is no longer matched to it: uninstall, then check whether a new release is available here.
 
 ## What changed in the source
 
@@ -190,6 +191,8 @@ The full CuraEngine source is in [`curaengine/`](curaengine). The history is arr
 3. `CuraEngine: add arc fitting (G2/G3 output)`: new `ArcFitter` (`include/utils/ArcFitter.h`, `src/utils/ArcFitter.cpp`), a `GCodeExport::writeExtrusionArc` that writes G2/G3, the use of both in `LayerPlan::writeGCode`, and `Settings::hasRecursive`.
 4. `CuraEngine: add a bone-like (trabecular) infill pattern`: new `BoneInfill` (`include/infill/BoneInfill.h`, `src/infill/BoneInfill.cpp`), and the plumbing for the `bone` pattern (`EFillMethod::BONE`, the settings parser, the infill dispatch, the line stitching list and bridging).
 5. `CuraEngine: faster infill ordering, rounding and bone grid`: `PathOrderOptimizer.h` (skip candidates that cannot win, and decide a polyline's start end without a combing path where possible), `PointMatrix.h` and `PointMatrix.cpp` (inline rounding), and `BoneInfill.cpp` (four waves per step).
+6. `CuraEngine: re-apply inner/outer/inner walls, arc fitting and bone infill on 5.14.0` (after `Import unmodified CuraEngine 5.14.0`): the changes above, moved to 5.14. `gcodeExport` moved to `gcode_export/`, and the bone pattern takes the island outline because 5.14 fills each island separately.
+7. `Retract before the outer wall at layer changes with inner/outer/inner and two walls`: one condition in `LayerPlanBuffer.cpp`.
 
 The Cura side is the plugin in [`plugin/InnerOuterInnerWalls`](plugin/InnerOuterInnerWalls). It adds the new option values with Cura's own `extend_category` call, adds the setting definitions from [`settings.def.json`](plugin/InnerOuterInnerWalls/settings.def.json) to the printer definition, and makes them visible.
 

@@ -6,7 +6,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT=$1
 rm -rf "$OUT"
 mkdir -p "$OUT/engine/lib" "$OUT/plugin"
-printf '#!/bin/sh\necho "Cura_SteamEngine version 5.13.0"\n' > "$OUT/engine/CuraEngine"
+printf '#!/bin/sh\necho "Cura_SteamEngine version 5.14.0"\n' > "$OUT/engine/CuraEngine"
 cp "$OUT/engine/CuraEngine" "$OUT/engine/CuraEngine.bin"
 printf '# stub\ninner_outer_inner\narc_fitting\nbone_infill\n' > "$OUT/engine/FEATURES"
 chmod +x "$OUT/engine/CuraEngine" "$OUT/engine/CuraEngine.bin"

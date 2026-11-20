@@ -1,8 +1,8 @@
-# Installs the inner/outer/inner CuraEngine + Cura plugin for UltiMaker Cura 5.13 on Windows.
+# Installs the inner/outer/inner CuraEngine + Cura plugin for UltiMaker Cura 5.14 on Windows.
 # Close Cura first.  Run:  powershell -ExecutionPolicy Bypass -File install.ps1   (or double-click install.bat)
 param(
     [switch]$Force,
-    [string]$DataDir = (Join-Path $env:APPDATA 'cura\5.13'),
+    [string]$DataDir = (Join-Path $env:APPDATA 'cura\5.14'),
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'cura-inner-outer-inner')
 )
 $ErrorActionPreference = 'Stop'
@@ -10,7 +10,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $cfg = Join-Path $DataDir 'cura.cfg'
 if (-not (Test-Path $cfg)) {
-    throw "$cfg not found. Start Cura 5.13 once so it creates its settings, then run this again."
+    throw "$cfg not found. Start Cura 5.14 once so it creates its settings, then run this again."
 }
 if (-not $Force -and (Get-Process -Name 'UltiMaker-Cura' -ErrorAction SilentlyContinue)) {
     throw 'Cura is running. Close it first (or use -Force).'

@@ -17,7 +17,7 @@ function Normalize($text) { return (($text -replace "`r`n", "`n") -replace "(?m)
 
 function RunCase($name, $startingConfig) {
     $root = Join-Path $work $name
-    $data = Join-Path $root 'cura\5.13'
+    $data = Join-Path $root 'cura\5.14'
     $install = Join-Path $root 'engine'
     New-Item -ItemType Directory -Force -Path $data | Out-Null
     $cfg = Join-Path $data 'cura.cfg'

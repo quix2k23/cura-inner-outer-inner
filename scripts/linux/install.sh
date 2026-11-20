@@ -1,10 +1,10 @@
 #!/bin/sh
-# Installs the inner/outer/inner CuraEngine + Cura plugin for UltiMaker Cura 5.13 on Linux.
+# Installs the inner/outer/inner CuraEngine + Cura plugin for UltiMaker Cura 5.14 on Linux.
 # Works for the Flatpak (com.ultimaker.cura) and for native/AppImage installs. Close Cura first.
 #   ./install.sh [--flatpak | --native] [--data-dir DIR] [--force]
 set -eu
 
-VERSION_DIR=5.13
+VERSION_DIR=5.14
 HERE=$(cd "$(dirname "$0")" && pwd)
 MODE=auto
 DATA=
@@ -34,7 +34,7 @@ if [ -z "$DATA" ]; then
         auto)
             if [ -d "$FLATPAK_DATA" ]; then DATA=$FLATPAK_DATA; MODE=flatpak
             elif [ -d "$NATIVE_DATA" ]; then DATA=$NATIVE_DATA; MODE=native
-            else die "no Cura $VERSION_DIR settings folder found. Start Cura 5.13 once, then run this again (or pass --data-dir)."; fi ;;
+            else die "no Cura $VERSION_DIR settings folder found. Start Cura 5.14 once, then run this again (or pass --data-dir)."; fi ;;
     esac
 elif [ "$MODE" = auto ]; then
     case "$DATA" in *.var/app/com.ultimaker.cura*) MODE=flatpak ;; *) MODE=native ;; esac

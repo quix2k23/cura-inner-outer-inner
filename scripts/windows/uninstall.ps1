@@ -1,6 +1,6 @@
 # Removes the inner/outer/inner CuraEngine + plugin and points Cura back at its own engine. Close Cura first.
 param(
-    [string]$DataDir = (Join-Path $env:APPDATA 'cura\5.13'),
+    [string]$DataDir = (Join-Path $env:APPDATA 'cura\5.14'),
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'cura-inner-outer-inner')
 )
 $ErrorActionPreference = 'Stop'

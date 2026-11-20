@@ -45,7 +45,7 @@ jobs:
         run: |
           $pkg = Join-Path $env:RUNNER_TEMP 'stub'
           New-Item -ItemType Directory -Force -Path "$pkg\engine", "$pkg\plugin" | Out-Null
-          Add-Type -TypeDefinition 'public class Stub { public static void Main() { System.Console.WriteLine("Cura_SteamEngine version 5.13.0"); } }' -OutputType ConsoleApplication -OutputAssembly "$pkg\engine\CuraEngine.exe"
+          Add-Type -TypeDefinition 'public class Stub { public static void Main() { System.Console.WriteLine("Cura_SteamEngine version 5.14.0"); } }' -OutputType ConsoleApplication -OutputAssembly "$pkg\engine\CuraEngine.exe"
           Set-Content -Path "$pkg\engine\FEATURES" -Value "# stub`ninner_outer_inner`narc_fitting`nbone_infill" -Encoding ascii
           Copy-Item -Recurse plugin\InnerOuterInnerWalls "$pkg\plugin\"
           Copy-Item -Recurse plugin\PlateAutosave "$pkg\plugin\"

@@ -14,7 +14,7 @@ import sys
 import tempfile
 import urllib.request
 
-CURA_TAG = "5.13.0"
+CURA_TAG = "5.14.0"
 DEFINITION_URL = "https://raw.githubusercontent.com/Ultimaker/Cura/%s/resources/definitions/%%s" % CURA_TAG
 LAYER = 10  # a layer well away from the first layer and the top/bottom skin
 

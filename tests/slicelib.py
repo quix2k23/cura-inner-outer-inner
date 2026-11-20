@@ -7,7 +7,7 @@ import subprocess
 import urllib.request
 from collections import defaultdict
 
-CURA_TAG = "5.13.0"
+CURA_TAG = "5.14.0"
 DEFINITION_URL = "https://raw.githubusercontent.com/Ultimaker/Cura/%s/resources/definitions/%%s" % CURA_TAG
 
 
@@ -57,7 +57,7 @@ def round_ring(path, outer=15.0, inner=5.0, height=6.0, wedges=120):
 def slice_model(engine, workdir, stl, gcode, settings=None):
     """Slice a model with the given settings; returns the path of the G-code.
 
-    The setting definitions come from Cura 5.13.0 on GitHub, unless the environment variable CURA_DEFINITIONS_DIR names a
+    The setting definitions come from Cura 5.14.0 on GitHub, unless the environment variable CURA_DEFINITIONS_DIR names a
     folder with fdmprinter.def.json and fdmextruder.def.json (for an engine built from a different version of Cura).
     """
     local = os.environ.get("CURA_DEFINITIONS_DIR")

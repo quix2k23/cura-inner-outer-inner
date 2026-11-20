@@ -3,7 +3,7 @@
 #   ./uninstall.sh [--flatpak | --native] [--data-dir DIR]
 set -eu
 
-VERSION_DIR=5.13
+VERSION_DIR=5.14
 MODE=auto
 DATA=
 

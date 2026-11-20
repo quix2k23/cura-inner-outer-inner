@@ -17,9 +17,9 @@ from .settings_panel_speed import SettingsPanelSpeed
 FEATURES_FILE = "FEATURES"  # Written next to the patched engine; lists what that engine can do.
 
 # The version shown on the splash screen and in the About dialog is "<Cura version> (ioi <version of this add-on>)", for
-# example "5.13.0 (ioi 1.1.0)". It marks a modified build without changing which release it is based on, so it can never
-# be mistaken for an official 5.13.1 or 5.13.2. In places that need a machine-readable version (release names, file names)
-# the same thing is written as 5.13.0+ioi.1.1.0, where everything after the "+" is build metadata (SemVer / PEP 440).
+# example "5.14.0 (ioi 1.1.0)". It marks a modified build without changing which release it is based on, so it can never
+# be mistaken for an official 5.14.1 or 5.14.2. In places that need a machine-readable version (release names, file names)
+# the same thing is written as 5.14.0+ioi.1.1.0, where everything after the "+" is build metadata (SemVer / PEP 440).
 VERSION_LABEL = "ioi"
 # Only these places show the modified version. Everything else (backups, update checks, plugin compatibility, crash
 # reports, network requests) keeps seeing the real Cura version.

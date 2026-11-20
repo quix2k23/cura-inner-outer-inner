@@ -15,10 +15,10 @@ permissions:
   contents: write
 
 env:
-  CURA_VERSION: 5.13.0
+  CURA_VERSION: 5.14.0
   CONAN_OPTIONS: >-
     -s build_type=Release -s compiler.cppstd=20
-    -o "curaengine/*:enable_plugins=True" -o "curaengine/*:enable_arcus=True"
+    -o "curaengine/*:enable_plugins=True" -o "curaengine/*:enable_arcus=True" -o "hwloc/*:shared=True"
     -c tools.build:skip_test=True
 
 jobs:

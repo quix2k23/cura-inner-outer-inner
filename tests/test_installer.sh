@@ -16,7 +16,7 @@ pass() { echo "PASS $*"; }
 run_case() {
     NAME=$1
     ROOT="$WORK/$NAME"
-    DATA="$ROOT/data/cura/5.13"
+    DATA="$ROOT/data/cura/5.14"
     DEST="$ROOT/data/cura-inner-outer-inner"
     mkdir -p "$DATA"
     printf "$2" > "$DATA/cura.cfg"
