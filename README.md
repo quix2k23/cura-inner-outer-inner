@@ -176,7 +176,7 @@ By hand, in Cura 5.13.0 (Flatpak on Linux): Plate Autosave saved, restored and s
 
 ## Version label
 
-The splash screen and the About dialog of a modified Cura show the version as **`5.14.0 (ioi 1.4.0)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.14.0+ioi.1.4.0` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.14.0`) for backups, update checks and plugin compatibility. Official Cura 5.14.1 or 5.14.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
+The splash screen and the About dialog of a modified Cura show the version as **`5.14.0 (ioi 1.4.1)`**: the Cura version it is based on, then the version of this add-on. In file names and release names the same thing is written `5.14.0+ioi.1.4.1` (everything after the `+` is "build metadata" in SemVer and Python's version rules, which marks a modified build without changing which release it is based on). Only those two places show the label. Cura itself still sees its real version (`5.14.0`) for backups, update checks and plugin compatibility. Official Cura 5.14.1 or 5.14.2 numbers are never used here, so a modified build cannot be mistaken for an official one.
 
 ## Updates
 
@@ -208,6 +208,10 @@ The release archives are built by [GitHub Actions](.github/workflows/build.yml).
 pip install "conan>=2.7,<3"
 conan config install https://github.com/ultimaker/conan-config.git
 conan profile detect --force
+# Optional: a libArcus with the exit-crash fix (see below); same -pr/-s/-o/-c arguments as the build
+python scripts/patch-arcus.py ../arcus-src -pr:h=cura_build.jinja -pr:b=cura_build.jinja \
+  -s build_type=Release -s compiler.cppstd=20 \
+  -o "curaengine/*:enable_plugins=True" -o "curaengine/*:enable_arcus=True" -c tools.build:skip_test=True
 cd curaengine
 conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja \
   -s build_type=Release -s compiler.cppstd=20 \
@@ -215,6 +219,8 @@ conan build . --build=missing -pr:h=cura_build.jinja -pr:b=cura_build.jinja \
   -c tools.build:skip_test=True -of out
 for t in test_wall_order test_arcs test_bone_infill; do python ../tests/$t.py out/build/Release/CuraEngine; done
 ```
+
+`scripts/patch-arcus.py` builds UltiMaker's libArcus with one fix: without it CuraEngine can abort when it exits after Cura has already closed the connection ("terminate called without an active exception"; on Linux this shows up as a crash report, the slice itself is fine). The fix is offered upstream in [libArcus #168](https://github.com/Ultimaker/libArcus/pull/168); the release build applies it on both platforms and checks that the engine really uses it.
 
 The first build compiles all dependencies (Boost, gRPC, protobuf, ...) and takes a while on a typical machine. `tests/render_layers.py` and `tests/render_section.py` draw layers and vertical sections of a G-code file as images, which is handy for looking at the infill.
 

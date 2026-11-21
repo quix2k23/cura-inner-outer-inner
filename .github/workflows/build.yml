@@ -62,6 +62,11 @@ jobs:
           conan graph info . -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS --format=json > ../conan-graph.json
           python3 ../scripts/check-conan-options.py ../conan-graph.json $CONAN_OPTIONS
 
+      # UltiMaker's libArcus aborts CuraEngine at exit when Cura closed the connection first; build a patched copy
+      # (https://github.com/Ultimaker/libArcus/pull/168). The script fails if the engine would not use it.
+      - name: Patch libArcus (exit crash)
+        run: set -f; python3 scripts/patch-arcus.py ../arcus-src -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS
+
       - name: Build CuraEngine
         working-directory: curaengine
         # $CONAN_OPTIONS is split into words unquoted, so it must not contain quote characters (Conan would get them
@@ -93,6 +98,12 @@ jobs:
 
       - name: Layer change retraction test
         run: python3 tests/test_layer_change_retract.py "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/CuraEngine"
+
+      - name: libArcus exit-crash test (packaged library)
+        run: |
+          LIB="dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64/engine/lib"
+          g++ -std=c++20 -I ../arcus-src/include tests/arcus_close_join.cpp -L "$LIB" -lArcus -pthread -o arcus_close_join
+          LD_LIBRARY_PATH="$LIB" timeout 60 ./arcus_close_join
 
       - name: Installer test (fake Cura settings folder)
         run: tests/test_installer.sh "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
@@ -140,6 +151,10 @@ jobs:
           set -f
           conan graph info . -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS --format=json > ../conan-graph.json
           python ../scripts/check-conan-options.py ../conan-graph.json $CONAN_OPTIONS
+
+      - name: Patch libArcus (exit crash)
+        shell: bash
+        run: set -f; python scripts/patch-arcus.py ../arcus-src -pr:h=cura_build.jinja -pr:b=cura_build.jinja $CONAN_OPTIONS
 
       - name: Build CuraEngine
         shell: bash
