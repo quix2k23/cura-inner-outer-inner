@@ -12,7 +12,9 @@ cp "$BIN" "$OUT/engine/CuraEngine.bin"
 # Bundle the shared libraries the engine needs that the system does not provide: the ones Conan built (Arcus, TBB, ...)
 # and GCC's C++ runtime. ldd needs the Conan library folders on its search path to resolve them, like a normal run would.
 CONAN_LIBS=$(find "${CONAN_HOME:-$HOME/.conan2}/p" -name '*.so*' -printf '%h\n' 2>/dev/null | sort -u | paste -sd: -)
-export LD_LIBRARY_PATH="$CONAN_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# A path set by the caller (for example from the build's conanrun.sh) comes first: the cache can hold older builds
+# of the same library, and the first match is the one that gets bundled.
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$CONAN_LIBS"
 echo "ldd of the built engine:"
 ldd "$BIN"
 if ldd "$BIN" | grep -q "not found"; then echo "error: some libraries could not be resolved" >&2; exit 1; fi

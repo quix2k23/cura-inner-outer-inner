@@ -85,6 +85,8 @@ jobs:
         run: |
           BIN=$(find curaengine/out -type f -name CuraEngine | head -1)
           echo "Built: $BIN"
+          # The exact library folders of this build, so an older arcus etc. in the restored cache is not bundled.
+          source "$(find curaengine/out -name conanrun.sh | head -1)"
           scripts/package-linux.sh "$BIN" "dist/cura-inner-outer-inner-$CURA_VERSION-linux-x86_64"
 
       - name: Wall order test (packaged engine)

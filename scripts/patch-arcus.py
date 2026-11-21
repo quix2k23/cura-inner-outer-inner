@@ -41,8 +41,10 @@ def main():
     if not (work / ".git").exists():
         run("git", "-c", "core.autocrlf=false", "clone", "-q", "https://github.com/Ultimaker/libArcus.git", str(work))
     run("git", "-c", "core.autocrlf=false", "checkout", "-q", "-f", commit, cwd=work)
-    # Normalise line endings: the patch may have been checked out with CRLF on Windows.
-    run("git", "apply", "-", cwd=work, inp=PATCH.read_text().replace("\r\n", "\n"))
+    # Bytes, not text: text mode on Windows turns \n into \r\n on the pipe and git apply then rejects the patch.
+    # The replace undoes a CRLF checkout of the patch file itself.
+    print("+ git apply", PATCH.name, flush=True)
+    subprocess.run(["git", "apply", "-"], cwd=work, input=PATCH.read_bytes().replace(b"\r\n", b"\n"), check=True)
 
     out = run("conan", "export", ".", "--version", version, "--format=json", cwd=work)
     ref = json.loads(out)["reference"]          # "arcus/5.11.1#<recipe revision>"
